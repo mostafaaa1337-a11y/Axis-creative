@@ -1,81 +1,109 @@
-import { Button, Flex, Modal, Table, Tag, Typography } from 'antd'
+import { PlayCircleOutlined } from '@ant-design/icons'
+import { Flex, Modal, Table, Tag, Typography } from 'antd'
 import { useContext, useState, type HTMLAttributes } from 'react'
-import { releaseRows, type StudioReleaseRow, type StudioReleases } from '../platform/studio'
+import { AxisButton } from '../platform/AxisButton'
+import { releaseActorName, releaseGroups, type StudioReleaseGroup, type StudioReleases } from '../platform/studio'
+import { fitContent, freeText } from '../platform/tableColumns'
 import { useText } from '../platform/texts'
+import { useDesignTokens } from '../platform/themeMode'
 import { PlatformContext } from './context'
 
 /**
- * The release history of the open application, newest activation first, with one row marked Active. A release that
- * was activated more than once has a row for each activation, and only its newest row is marked. When `canRollBack`,
- * every row of a release that is not active has a Roll back button, off while `busy`. The button opens a dialog that
- * names the release number and label, and its confirmation calls `onRollBack`.
+ * Proposed: the releases of the open application, one row per release, the highest number first: its label and note,
+ * which its publish gave, who published it and when, and Live on the one that runs, as the band says. When
+ * `canActivate`, every release that is not live has an icon button, Activate…, off while `busy`: activating goes
+ * either way, back to an older release or forward to a newer one, so one verb names it. The button opens a dialog that
+ * says which release replaces the live one, and its confirmation calls `onActivate`.
  */
 export function StudioReleasesList({
   history,
-  canRollBack,
+  canRollBack: canActivate,
   busy,
-  onRollBack,
+  onRollBack: onActivate,
 }: {
   history: StudioReleases
   canRollBack: boolean
   busy: boolean
-  onRollBack: (row: StudioReleaseRow) => void
+  onRollBack: (release: { releaseId: string }) => void
 }) {
   const t = useText()
+  const { colour } = useDesignTokens()
   const locale = useContext(PlatformContext)?.current.locale
-  const [pending, setPending] = useState<StudioReleaseRow | null>(null)
-  const time = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'medium' })
-  const activeId = history.active?.releaseId
+  const [pending, setPending] = useState<StudioReleaseGroup | null>(null)
+  const time = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' })
+  const live = history.active?.number
 
   function confirm() {
-    const row = pending
+    const release = pending
     setPending(null)
-    if (row) {
-      onRollBack(row)
+    if (release) {
+      onActivate(release)
     }
   }
 
   return (
     <section data-testid="studio-releases">
       <Flex vertical gap="small">
-        <Typography.Title level={3}>{t('shell.studio.releases')}</Typography.Title>
-        <Table<StudioReleaseRow>
+        <Table<StudioReleaseGroup>
           size="small"
           pagination={false}
-          rowKey={(row) => `${row.releaseId}/${row.activatedAt}`}
-          dataSource={releaseRows(history)}
+          // Proposed: where the page is narrower than the columns' content, the table scrolls sideways.
+          scroll={{ x: 'max-content' }}
+          rowKey={(release) => release.releaseId}
+          dataSource={releaseGroups(history)}
           locale={{ emptyText: t('shell.studio.releases.empty') }}
-          onRow={(row) =>
+          onRow={(release) =>
             ({
               'data-testid': 'studio-release-row',
-              'data-number': row.number,
-              'data-active': row.active ? 'true' : undefined,
+              'data-number': release.number,
+              'data-active': release.live ? 'true' : undefined,
             }) as HTMLAttributes<HTMLElement>
           }
           columns={[
-            { key: 'number', title: t('shell.studio.releases.number'), render: (_, row) => row.number },
-            { key: 'label', title: t('shell.studio.releases.label'), render: (_, row) => row.label },
-            { key: 'note', title: t('shell.studio.releases.note'), render: (_, row) => row.note },
-            { key: 'actor', title: t('shell.studio.releases.actor'), render: (_, row) => row.actorName ?? row.actor },
             {
-              key: 'time',
-              title: t('shell.studio.releases.time'),
-              render: (_, row) => time.format(new Date(row.activatedAt)),
+              key: 'number',
+              title: t('shell.studio.releases.number'),
+              ...fitContent,
+              render: (_, release) => release.number,
             },
             {
-              key: 'active',
-              title: t('shell.studio.releases.active'),
-              render: (_, row) => (row.active ? <Tag color="success">{t('shell.studio.releases.active')}</Tag> : null),
+              key: 'label',
+              title: t('shell.studio.releases.label'),
+              ...freeText,
+              render: (_, release) => release.label,
             },
-            ...(canRollBack
+            { key: 'note', title: t('shell.studio.releases.note'), ...freeText, render: (_, release) => release.note },
+            {
+              key: 'published',
+              title: t('shell.studio.releases.published'),
+              ...fitContent,
+              render: (_, release) =>
+                `${releaseActorName(release.published, t)} · ${time.format(new Date(release.published.activatedAt))}`,
+            },
+            {
+              key: 'status',
+              title: t('shell.studio.releases.status'),
+              ...fitContent,
+              render: (_, release) =>
+                release.live ? <Tag color="success">{t('shell.studio.releases.live')}</Tag> : null,
+            },
+            ...(canActivate
               ? [
                   {
-                    key: 'rollback',
-                    render: (_: unknown, row: StudioReleaseRow) =>
-                      row.releaseId === activeId ? null : (
-                        <Button size="small" disabled={busy} onClick={() => setPending(row)}>
-                          {t('shell.studio.rollback')}
-                        </Button>
+                    key: 'activate',
+                    ...fitContent,
+                    render: (_: unknown, release: StudioReleaseGroup) =>
+                      release.live ? null : (
+                        <AxisButton
+                          role="icon"
+                          size="small"
+                          nameKey="shell.studio.activate"
+                          nameSuffix={`${t('shell.studio.rollback.release')} ${release.number}`}
+                          icon={<PlayCircleOutlined />}
+                          disabled={busy}
+                          data-testid={`studio-activate-${release.number}`}
+                          onClick={() => setPending(release)}
+                        />
                       ),
                   },
                 ]
@@ -85,17 +113,21 @@ export function StudioReleasesList({
       </Flex>
       <Modal
         open={pending !== null}
-        title={t('shell.studio.rollback.title')}
-        okText={t('shell.studio.rollback.confirm')}
+        title={t('shell.studio.activate.title').replace('{number}', String(pending?.number ?? ''))}
+        okText={t('shell.studio.activate.confirm')}
         cancelText={t('shell.studio.cancel')}
         onOk={confirm}
         onCancel={() => setPending(null)}
       >
         {pending && (
-          <Typography.Text data-testid="studio-rollback-release">
-            {t('shell.studio.rollback.release')} {pending.number}
-            {pending.label ? ` ${pending.label}` : ''}
-          </Typography.Text>
+          <Flex vertical gap={4} data-testid="studio-rollback-release">
+            <Typography.Text>
+              {(live === undefined ? t('shell.studio.activate.first') : t('shell.studio.activate.replaces'))
+                .replace('{number}', String(pending.number))
+                .replace('{live}', String(live ?? ''))}
+            </Typography.Text>
+            {pending.label && <Typography.Text style={{ color: colour.textMuted }}>{pending.label}</Typography.Text>}
+          </Flex>
         )}
       </Modal>
     </section>

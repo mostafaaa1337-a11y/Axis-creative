@@ -58,7 +58,12 @@
         "name": "PurchaseRequests",
         "file": "application.json",
         "version": "9f4a249a154de3eb533a891b9e029bf93bcc28c18b2be56d44011c5c6d83d7b1",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": {
+          "en": "Purchase requests",
+          "vi": "Yêu cầu mua hàng"
+        },
+        "locale": null
       },
       {
         "id": "409bc638-0aec-4084-ada2-e3baed50057d",
@@ -66,7 +71,9 @@
         "name": "PurchasingSystem",
         "file": "connectors/purchasing-system.json",
         "version": "f3ffc528e346f4c77c58aff927271911688dfcdb0ffd432fc8206758ec05863d",
-        "usedBy": 3
+        "usedBy": 3,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "cf3831ca-5fcf-4d28-8d13-507454ea11d3",
@@ -74,7 +81,9 @@
         "name": "PurchaseRequestList",
         "file": "data-sources/purchase-request-list.json",
         "version": "66027bd388f3bfeea2496f02325e358c5b7c35910ea9d03a62aa41ce284eba77",
-        "usedBy": 4
+        "usedBy": 4,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "3eb3d7ba-f87e-492a-825c-916f7a5ae7a4",
@@ -82,7 +91,9 @@
         "name": "RequestsByDepartment",
         "file": "data-sources/requests-by-department.json",
         "version": "f410bbb6046240ccb6de27e9897884a94bf5204678c0531d4732cf2deac6f155",
-        "usedBy": 3
+        "usedBy": 3,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "bc241668-fe85-45a4-b7cf-d36da8d56b71",
@@ -90,7 +101,9 @@
         "name": "SubmitPurchaseRequest",
         "file": "endpoints/submit-purchase-request.json",
         "version": "6c3eeaffdb710892f0e672526880234d4f045931e96fe7708c4f96d5b7c4edbf",
-        "usedBy": 1
+        "usedBy": 1,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "ebe6bc20-4772-4d6c-839b-65d426ebeeca",
@@ -98,7 +111,12 @@
         "name": "Department",
         "file": "entities/department.json",
         "version": "4559f85296a834d80e072641e9db9dc44727ca8c979d3bfbc98c6edfa7593281",
-        "usedBy": 10
+        "usedBy": 10,
+        "titles": {
+          "en": "Department",
+          "vi": "Phòng ban"
+        },
+        "locale": null
       },
       {
         "id": "7c1f3e52-9b4a-4d8e-a6f0-3b2d5e8c91a4",
@@ -106,7 +124,12 @@
         "name": "LineItem",
         "file": "entities/line-item.json",
         "version": "1ee936bcfc8a2339cae657c529bfb94012b86e0b977c3a96516a3b6d709d638c",
-        "usedBy": 2
+        "usedBy": 2,
+        "titles": {
+          "en": "Line item",
+          "vi": "Dòng hàng"
+        },
+        "locale": null
       },
       {
         "id": "d9ccbf89-5004-4d52-8885-2ee377b7caa5",
@@ -114,7 +137,12 @@
         "name": "PurchaseRequest",
         "file": "entities/purchase-request.json",
         "version": "c4937e21daaaa1a20e2f5fe6bda7f4220356d939a6e60b1eb4fa89e231a55f64",
-        "usedBy": 16
+        "usedBy": 16,
+        "titles": {
+          "en": "Purchase request",
+          "vi": "Yêu cầu mua hàng"
+        },
+        "locale": null
       },
       {
         "id": "2deb5acd-dfd8-4c5a-b546-a1aa03df6964",
@@ -122,7 +150,12 @@
         "name": "Supplier",
         "file": "entities/supplier.json",
         "version": "d82d01f0532754a823c36d59575014d5ac366977c36943baa513232aea686512",
-        "usedBy": 9
+        "usedBy": 9,
+        "titles": {
+          "en": "Supplier",
+          "vi": "Nhà cung cấp"
+        },
+        "locale": null
       },
       {
         "id": "77c7c183-7283-46a7-b56f-5cf5cec518aa",
@@ -130,7 +163,9 @@
         "name": "PurchaseRequestReview",
         "file": "forms/purchase-request-review.json",
         "version": "9afa6a608421293bfe510b703c659d38944fe3d12a457a5a918802403a60bab2",
-        "usedBy": 2
+        "usedBy": 2,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "b52449b4-bc18-4972-bf11-7b73f5a82198",
@@ -138,7 +173,9 @@
         "name": "accounts",
         "file": "identity-providers/accounts.json",
         "version": "d808f0228e2b646e67ee99b26b4aaba0752de8f08f57b2a4fffe1600f88ecfa6",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "5ffa28da-f66a-46d6-b996-9c8f00dc3643",
@@ -146,7 +183,12 @@
         "name": "Approvals",
         "file": "pages/approvals.json",
         "version": "26f893ce02970961d7d96d4c1d813f1fe2ec4b380296317bddf1096809030308",
-        "usedBy": 1
+        "usedBy": 1,
+        "titles": {
+          "en": "Purchase request approvals",
+          "vi": "Theo dõi quy trình phê duyệt"
+        },
+        "locale": null
       },
       {
         "id": "40d4c8a6-7017-4f7c-9467-67fc9ea8dcd1",
@@ -154,7 +196,12 @@
         "name": "Departments",
         "file": "pages/departments.json",
         "version": "c7117f9b47a8de2a584ef5e1ecb36ea2c5c747e94da33cb047dfb854575602e2",
-        "usedBy": 1
+        "usedBy": 1,
+        "titles": {
+          "en": "Departments",
+          "vi": "Phòng ban"
+        },
+        "locale": null
       },
       {
         "id": "894259ed-7e0e-49aa-9e51-43fb45700409",
@@ -162,7 +209,12 @@
         "name": "MyTasks",
         "file": "pages/my-tasks.json",
         "version": "dad7646046b35b05b527b57084fe4d5777482fc17f1242cd843c85425bd29dac",
-        "usedBy": 1
+        "usedBy": 1,
+        "titles": {
+          "en": "My tasks",
+          "vi": "Nhiệm vụ của tôi"
+        },
+        "locale": null
       },
       {
         "id": "20a80495-3566-40d6-bf99-74fcdd9bb42b",
@@ -170,7 +222,12 @@
         "name": "PurchaseRequestForm",
         "file": "pages/purchase-request-form.json",
         "version": "4592c3d90487808b4496cadc22592baf8259da2ae5d6af0dd3aaa32341b865b2",
-        "usedBy": 2
+        "usedBy": 2,
+        "titles": {
+          "en": "Purchase request",
+          "vi": "Yêu cầu mua hàng"
+        },
+        "locale": null
       },
       {
         "id": "e0ee63b0-ff11-4f06-95ee-e73922f2c1a9",
@@ -178,7 +235,12 @@
         "name": "PurchaseRequests",
         "file": "pages/purchase-requests.json",
         "version": "7c6d34054b6eb30fe202b055139875906425989d0c3500052a11c23126afa388",
-        "usedBy": 1
+        "usedBy": 1,
+        "titles": {
+          "en": "Purchase requests",
+          "vi": "Yêu cầu mua hàng"
+        },
+        "locale": null
       },
       {
         "id": "3b501ea6-096a-4a2a-ba23-39b062150983",
@@ -186,7 +248,12 @@
         "name": "RequestsByDepartment",
         "file": "pages/requests-by-department.json",
         "version": "cee0935b433cfb10421e4225b156642d62cde02e5e7d47f8d47de43ba0cc5451",
-        "usedBy": 1
+        "usedBy": 1,
+        "titles": {
+          "en": "Purchase request totals by department",
+          "vi": "Tổng yêu cầu mua hàng theo phòng ban"
+        },
+        "locale": null
       },
       {
         "id": "9b707fe9-a837-433e-8062-48a2a9b4d62a",
@@ -194,7 +261,12 @@
         "name": "Suppliers",
         "file": "pages/suppliers.json",
         "version": "714dbf8ef38d3856bfc38d367ab93f635e859270e02a549868abb45a165b4079",
-        "usedBy": 1
+        "usedBy": 1,
+        "titles": {
+          "en": "Suppliers",
+          "vi": "Nhà cung cấp"
+        },
+        "locale": null
       },
       {
         "id": "7d9f722e-7406-4a39-87d5-e99293353a05",
@@ -202,7 +274,9 @@
         "name": "DepartmentManagerAccess",
         "file": "policies/department-manager-access.json",
         "version": "06f90b94527dad0dd343e6e3c7099acf930b4b7d3a36d6304f8ad0c0fc349148",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "2eeb31d5-47d9-4fb9-bd84-eb7ffdc11f12",
@@ -210,7 +284,9 @@
         "name": "EmployeeAccess",
         "file": "policies/employee-access.json",
         "version": "3f3ef441b78f4f21d16b8658318655d4071edde4ec080a2f504fa37fc02fd45a",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "d9788ec8-1186-488d-8c83-cbc9e5441d11",
@@ -218,7 +294,9 @@
         "name": "FinanceReviewerAccess",
         "file": "policies/finance-reviewer-access.json",
         "version": "a4211aa2f891e888954bace9091129ec019f1cd92d569c10d717596fa0ad8ae9",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "ad149043-1f24-4e7d-a9b8-1ba518f8e010",
@@ -226,7 +304,9 @@
         "name": "OperatorAccess",
         "file": "policies/operator-access.json",
         "version": "1d29a6530fa08dbc5307c16b94ad35ba3a603c7931f420a5c4a583c216a6c5c2",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "1a742db5-543d-4e8d-8c66-61bf42a1b93b",
@@ -234,7 +314,9 @@
         "name": "PurchasingSystemAccess",
         "file": "policies/purchasing-system-access.json",
         "version": "dd3947f9762b2050c8adc96e2f066a232f7644cce19d213f4e6b6e3d9efd4522",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "4b60c03e-02d0-4329-80c6-75f972190399",
@@ -242,7 +324,9 @@
         "name": "PurchaseRequestApproval",
         "file": "processes/purchase-request-approval.json",
         "version": "1a51d965c248b5b4a8765dbd30821ceb604177f9e96b02a01da177fa03f23f6f",
-        "usedBy": 16
+        "usedBy": 16,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "6fedaeb5-8afd-4fed-9aad-af8dc6b60f58",
@@ -250,7 +334,12 @@
         "name": "department-manager",
         "file": "roles/department-manager.json",
         "version": "77483a5f812145ece164c78ad77e612400f795835cafc267c37547d65c4b3c07",
-        "usedBy": 5
+        "usedBy": 5,
+        "titles": {
+          "en": "Department manager",
+          "vi": "Trưởng phòng"
+        },
+        "locale": null
       },
       {
         "id": "f373f3ea-4e4d-4842-9791-4daf7be47f0a",
@@ -258,7 +347,12 @@
         "name": "employee",
         "file": "roles/employee.json",
         "version": "ef3471c236885b05ae65b0e9ca6b2f41c70c407fdb944c4848b0771d426e6781",
-        "usedBy": 7
+        "usedBy": 7,
+        "titles": {
+          "en": "Employee",
+          "vi": "Nhân viên"
+        },
+        "locale": null
       },
       {
         "id": "83e56e02-92d0-46d4-a67d-78f6e76468a4",
@@ -266,7 +360,12 @@
         "name": "finance-reviewer",
         "file": "roles/finance-reviewer.json",
         "version": "953cd5c820d40e40059ba06b6486a0866ba3f6019729f1115bb9e537e142a7d6",
-        "usedBy": 4
+        "usedBy": 4,
+        "titles": {
+          "en": "Finance reviewer",
+          "vi": "Người duyệt tài chính"
+        },
+        "locale": null
       },
       {
         "id": "d2cd0512-1503-4857-91ac-c0100e82be70",
@@ -274,7 +373,12 @@
         "name": "operator",
         "file": "roles/operator.json",
         "version": "8adf3c4ff307c9d65ba3f713162fb534afdb9d55a53c740d26ea86c7ece9a508",
-        "usedBy": 1
+        "usedBy": 1,
+        "titles": {
+          "en": "Operator",
+          "vi": "Người vận hành"
+        },
+        "locale": null
       },
       {
         "id": "ae4c47b6-4ece-4666-ae0a-4e7b6731bf7d",
@@ -282,7 +386,12 @@
         "name": "purchasing-system",
         "file": "roles/purchasing-system.json",
         "version": "2b928ec06f6c30033e10989c305a31ff3d406cd7d4b17c279c92aa6e4f178c97",
-        "usedBy": 1
+        "usedBy": 1,
+        "titles": {
+          "en": "Purchasing system",
+          "vi": "Hệ thống mua hàng"
+        },
+        "locale": null
       },
       {
         "id": "313225f1-c69f-41bc-b746-12d91f127c39",
@@ -290,7 +399,9 @@
         "name": "FinanceThreshold",
         "file": "rules/finance-threshold.json",
         "version": "818a209452223c1efc4b027b8bee1b057564ce75cca125654320c41fd9d4db8b",
-        "usedBy": 1
+        "usedBy": 1,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "09d75317-fd9e-411e-8322-317778fc1b2b",
@@ -298,7 +409,9 @@
         "name": "ApprovalBelowThreshold",
         "file": "scenarios/approval-below-threshold.json",
         "version": "f45349bcd67e3df6c58dc7cf426075d61090062874d1040c22d891689f013d13",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "ee1ac8c8-74c5-4105-867a-1090a15746a7",
@@ -306,7 +419,9 @@
         "name": "FinanceApprovalAboveThreshold",
         "file": "scenarios/finance-approval.json",
         "version": "6538d8f04390de19fbfe7e3945a4ab77a9e7822c37b2dcdeb85104f7d2b0728c",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "8010fda7-5577-4d68-bdbe-4b49ab8f05fe",
@@ -314,7 +429,9 @@
         "name": "ManagerCannotTakeFinanceDecision",
         "file": "scenarios/manager-cannot-decide-finance.json",
         "version": "c09936c288c78cf2e9487985f67befe457abde8523befaafa68f72b2bd66e223",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "5b97473d-ab62-4fd9-a610-016ffb81b7e3",
@@ -322,7 +439,9 @@
         "name": "RequesterCannotReadAnotherRequest",
         "file": "scenarios/requester-cannot-read-others.json",
         "version": "1fc367023f44aa4e40cf4261ef97d843089f41a444ef24b8d73ba8cfea565a38",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "bd059896-4e74-43d6-bd45-f6e8abd08d41",
@@ -330,7 +449,9 @@
         "name": "ReturnedRequestGoesBackToRequester",
         "file": "scenarios/returned-request.json",
         "version": "754efe969cb1c32bb432ecfe5b382e28909894bdafbfdb67a521fee06bf40a97",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "46e28f6b-ce3b-4a17-829e-92fb3a5930ad",
@@ -338,7 +459,9 @@
         "name": "Departments",
         "file": "seeds/departments.json",
         "version": "15da3c0fd26aa874892b7a3d90e3325175d9da539144d04127f60964b087192e",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "e9139b79-4dd5-485e-89a1-48b0e93eeaf9",
@@ -346,7 +469,9 @@
         "name": "Suppliers",
         "file": "seeds/suppliers.json",
         "version": "fcf39feced8a9e33cdac010fd161adb17cb55386c647f7c8e732579e0718600b",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "72ecc491-f825-4968-8eb6-1f2ac19cae7d",
@@ -354,7 +479,9 @@
         "name": "PurchaseRequestNumber",
         "file": "sequences/purchase-request-number.json",
         "version": "2a76949a9e95d77b7730720358f185bf319c7d182a915b1873a916145313fadd",
-        "usedBy": 1
+        "usedBy": 1,
+        "titles": null,
+        "locale": null
       },
       {
         "id": "0cec2d63-0949-465f-a29e-80b546dfa347",
@@ -362,7 +489,12 @@
         "name": "Purchasing",
         "file": "sites/purchasing.json",
         "version": "34fc51174017619a9a6497a882b10edcf865217040386b90be3d3e35af124890",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": {
+          "en": "Purchasing",
+          "vi": "Mua hàng"
+        },
+        "locale": null
       },
       {
         "id": "494288c9-ce9b-4fc9-bea0-d618094e66fe",
@@ -370,7 +502,9 @@
         "name": "TextsEn",
         "file": "texts/en.json",
         "version": "f92e43ce0d721e16021986a926858742018cca1cc94318ed0831269507110e43",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": "en"
       },
       {
         "id": "05298509-1d5c-40d1-96ab-21909ec74972",
@@ -378,7 +512,9 @@
         "name": "TextsVi",
         "file": "texts/vi.json",
         "version": "2f4a97b543d440ffd2ac14490b430ce54d18f3d50efab4be9b4ce93ce705a9ed",
-        "usedBy": 0
+        "usedBy": 0,
+        "titles": null,
+        "locale": "vi"
       }
     ]
   },

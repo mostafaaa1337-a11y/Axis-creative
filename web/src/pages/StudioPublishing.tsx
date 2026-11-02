@@ -12,7 +12,6 @@ import {
   rollbackStudioRelease,
   ServerUnreachableError,
   type StudioDiagnostic,
-  type StudioReleaseRow,
   type StudioReleases,
   type StudioResourceItem,
   type StudioRequest,
@@ -319,7 +318,7 @@ export function StudioPublishing({
             history={history}
             canRollBack={canPublish}
             busy={busy}
-            onRollBack={(row: StudioReleaseRow) => send(() => rollbackStudioRelease(application, row.releaseId))}
+            onRollBack={(release) => send(() => rollbackStudioRelease(application, release.releaseId))}
           />
         </>
       )}

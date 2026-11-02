@@ -1,5 +1,5 @@
 import { Alert, Button, Flex, Input, Result, Typography } from 'antd'
-import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { fetchCurrentUser } from '../platform/currentUser'
 import { forbidden } from '../platform/inspection'
@@ -40,7 +40,8 @@ import { StudioPublishing, type StudioPublishingHandle } from './StudioPublishin
 import { StudioNavigation } from './StudioNavigation'
 import type { StudioView } from './studioViews'
 import { StudioReferences } from './StudioReferences'
-import { PageLayout, type BreadcrumbStep } from '../platform/PageLayout'
+import { StudioResourceTitle } from './studioResourceTitle'
+import { PageLayout } from '../platform/PageLayout'
 import { HomeTile } from '../platform/HomeTile'
 import { SiteMark } from '../platform/SiteMark'
 import { PlatformContext } from './context'
@@ -158,7 +159,6 @@ function StudioWorkspace() {
   const [releases, setReleases] = useState<{ application: string; history: StudioReleases | 'failed' }>()
   // Proposed: whether the problems panel is open beside the page.
   const [problemsOpen, setProblemsOpen] = useState(false)
-  const { colour } = useDesignTokens()
   const publishing = useRef<StudioPublishingHandle>(null)
   const [requestBusy, setRequestBusy] = useState(false)
 
@@ -346,8 +346,7 @@ function StudioWorkspace() {
       <PageLayout
         compact
         title={t('shell.studio.title')}
-        breadcrumb={[{ label: 'Axis', to: '/' }, { label: t('shell.studio.title') }]}
-        actions={canCreate ? <StudioNewApplication primary onCreated={onApplicationCreated} /> : undefined}
+        headingExtra={canCreate ? <StudioNewApplication primary onCreated={onApplicationCreated} /> : undefined}
       >
         <StudioApplicationTiles applications={apps} />
       </PageLayout>
@@ -355,14 +354,15 @@ function StudioWorkspace() {
   }
 
   const kindView = view.name === 'kind' ? view.kind : (selected?.kind ?? selectedModuleItem?.kind)
-  // Proposed: the application is named by its title, as on the home page, never by its technical name.
   const openApp = apps.find((app) => app.name === application)
-  const appTitle = openApp ? studioApplicationTitle(openApp, locale) : application
-  // Proposed: the band names nothing: the sidebar names the list or the view, and the page's content names the open
-  // resource, so the band holds the application's state and actions alone. The title stays its hidden heading.
-  let title = appTitle
-  if (selected) {
-    title = resourceTitle(selected)
+  // Proposed: every page heads its content with what it is about: the Overview with the application's title, as it is
+  // the application's own page, another sidebar entry with its name, such as Settings or Entities, and an open resource
+  // with its label, with its file or its module on a muted line under it. The band holds no title.
+  let title = openApp ? studioApplicationTitle(openApp, locale) : application
+  if (selected?.kind === 'application') {
+    title = t('shell.studio.nav.settings')
+  } else if (selected) {
+    title = resourceTitle(selected, locale)
   } else if (selectedModuleItem) {
     title = selectedModuleItem.name
   } else if (view.name === 'kind') {
@@ -372,7 +372,6 @@ function StudioWorkspace() {
   } else if (view.name === 'releases') {
     title = t('shell.studio.nav.releases')
   }
-  const steps: BreadcrumbStep[] = [{ label: title }]
 
   function kindLabel(kind: string) {
     const key = `shell.studio.kind.${kind}`
@@ -381,7 +380,7 @@ function StudioWorkspace() {
   }
 
   const ofKind = kindView ? resources.filter((item) => item.kind === kindView) : []
-  const listed = filterResources(ofKind, search)
+  const listed = filterResources(ofKind, search, locale)
   const navigationView: StudioView =
     selected?.kind === 'application'
       ? { name: 'settings' }
@@ -389,8 +388,14 @@ function StudioWorkspace() {
         ? { name: 'kind', kind: kindView }
         : view
 
+  // Proposed: every place in the workspace names a resource by its label, through this lookup.
+  const titleOf = (id: string) => {
+    const item = resources.find((resource) => resource.id === id)
+    return item ? resourceTitle(item, locale) : undefined
+  }
+
   return (
-    <>
+    <StudioResourceTitle.Provider value={titleOf}>
       {loaded && 'resources' in loaded && (
         <StudioNavigation
           application={application}
@@ -414,30 +419,35 @@ function StudioWorkspace() {
       <PageLayout
         compact
         title={title}
-        breadcrumb={steps}
-        bandTitle={selected || selectedModuleItem ? 'none' : 'hidden'}
+        subtitle={
+          selected
+            ? [selected.file, ...(path ? [path] : [])].join(' · ')
+            : selectedModuleItem
+              ? `${t('shell.studio.module')}: ${selectedModuleItem.module}`
+              : view.name === 'overview' && openApp
+                ? studioApplicationDescription(openApp, locale)
+                : undefined
+        }
+        headingExtra={
+          selected && canTest && selected.kind === 'scenario' && selected.name ? (
+            <Button
+              data-testid="studio-run-scenario"
+              disabled={requestBusy || reconnecting}
+              onClick={() => publishing.current?.runTests([selected.name!])}
+            >
+              {t('shell.studio.runScenario')}
+            </Button>
+          ) : undefined
+        }
         status={
-          !(loaded && 'resources' in loaded) ? undefined : view.name === 'overview' &&
-            !selected &&
-            !selectedModuleItem ? (
-            // Proposed: the Overview lists the problems and the live release itself, so its band holds the
-            // application's description, on one line that ends in an ellipsis with the whole text in a tooltip.
-            openApp && studioApplicationDescription(openApp, locale) ? (
-              <Typography.Text
-                ellipsis={{ tooltip: studioApplicationDescription(openApp, locale) }}
-                style={{ color: colour.textMuted, flex: '0 1 auto', minWidth: 0 }}
-              >
-                {studioApplicationDescription(openApp, locale)}
-              </Typography.Text>
-            ) : undefined
-          ) : (
+          loaded && 'resources' in loaded ? (
             <StudioStatus
               diagnostics={loaded.diagnostics}
               releases={releases?.application === application ? releases.history : undefined}
               problemsOpen={problemsOpen}
               onProblems={() => setProblemsOpen((current) => !current)}
             />
-          )
+          ) : undefined
         }
         actions={<div ref={setActionsSlot} style={{ display: 'flex' }} />}
       >
@@ -472,21 +482,6 @@ function StudioWorkspace() {
           <div data-testid="studio-resource-details">
             {selected ? (
               <Flex vertical gap="middle">
-                <ResourceHeading
-                  title={resourceTitle(selected)}
-                  detail={path ? [selected.file, path] : [selected.file]}
-                  extra={
-                    canTest && selected.kind === 'scenario' && selected.name ? (
-                      <Button
-                        data-testid="studio-run-scenario"
-                        disabled={requestBusy || reconnecting}
-                        onClick={() => publishing.current?.runTests([selected.name!])}
-                      >
-                        {t('shell.studio.runScenario')}
-                      </Button>
-                    ) : undefined
-                  }
-                />
                 <StudioNamesContext.Provider value={names ?? undefined}>
                   <StudioEditor
                     key={`editor-${selected.id}`}
@@ -528,10 +523,6 @@ function StudioWorkspace() {
               </Flex>
             ) : selectedModuleItem ? (
               <Flex vertical gap="middle">
-                <ResourceHeading
-                  title={selectedModuleItem.name}
-                  detail={[`${t('shell.studio.module')}: ${selectedModuleItem.module}`]}
-                />
                 <StudioNamesContext.Provider value={names ?? undefined}>
                   <ModuleResourceView
                     key={`module-${selectedModuleItem.kind}-${selectedModuleItem.id}`}
@@ -575,9 +566,9 @@ function StudioWorkspace() {
               </Flex>
             ) : view.name === 'overview' ? (
               <StudioOverview
+                application={application}
                 locale={locale}
                 resources={loaded.resources}
-                diagnostics={loaded.diagnostics}
                 releases={releases?.application === application ? releases.history : undefined}
                 addressOf={(target) =>
                   'resource' in target
@@ -601,32 +592,11 @@ function StudioWorkspace() {
           onClose={() => setProblemsOpen(false)}
         />
       )}
-    </>
+    </StudioResourceTitle.Provider>
   )
 }
 
 /** Proposed: the workspace address of a view of `application`. */
-/**
- * Proposed: an open resource heads the page with its title, the page's one heading, as the band names nothing. Under
- * it one line in textMuted says where the resource lives: its file and the path in it, or the module it comes from.
- * The sidebar already marks its kind, so the line repeats neither the kind nor the id. The resource's own actions,
- * such as Run scenario, sit on the right of the title.
- */
-function ResourceHeading({ title, detail, extra }: { title: string; detail: readonly string[]; extra?: ReactNode }) {
-  const { colour } = useDesignTokens()
-  return (
-    <Flex vertical gap={4}>
-      <Flex align="center" justify="space-between" gap="middle" wrap>
-        <Typography.Title level={4} style={{ margin: 0 }}>
-          {title}
-        </Typography.Title>
-        {extra}
-      </Flex>
-      <Typography.Text style={{ color: colour.textMuted }}>{detail.join(' · ')}</Typography.Text>
-    </Flex>
-  )
-}
-
 function studioAddress(application: string, view: StudioView): string {
   const app = `app=${encodeURIComponent(application)}`
   switch (view.name) {
@@ -685,7 +655,7 @@ function StudioApplicationTiles({ applications }: { applications: readonly Studi
   )
 }
 
-/** Proposed: the resources of one kind as rows, each its name and file, which opens it in the editor. */
+/** Proposed: the resources of one kind as rows, each its label and file, which opens it in the editor. */
 function StudioResourceRows({
   items,
   extra,
@@ -696,9 +666,10 @@ function StudioResourceRows({
   onOpen: (id: string) => void
 }) {
   const t = useText()
+  const locale = useContext(PlatformContext)?.current.locale ?? 'en'
   const { colour, spacing, radius } = useDesignTokens()
   const rows = [
-    ...items.map((item) => ({ id: item.id, name: resourceTitle(item), detail: item.file })),
+    ...items.map((item) => ({ id: item.id, name: resourceTitle(item, locale), detail: item.file })),
     ...extra.map((entity) => ({ id: entity.id, name: entity.name, detail: entity.module ?? '' })),
   ]
   if (rows.length === 0) {

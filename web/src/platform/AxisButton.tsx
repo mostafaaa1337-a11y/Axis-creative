@@ -1,5 +1,5 @@
 import { Button, Tooltip, type ButtonProps } from 'antd'
-import { createContext, useContext, type CSSProperties, type ReactNode, type Ref } from 'react'
+import { createContext, useContext, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
 import { useText } from './texts'
 import { useDesignTokens } from './themeMode'
 
@@ -109,13 +109,18 @@ export function AxisButton(props: AxisButtonProps) {
 /**
  * Proposed: the icon button that `AxisButton`'s `icon` role draws, named by a text already in hand rather than a text
  * key, for a page with no text catalogue such as the identity provider's. The name is its tooltip on hover and on
- * keyboard focus and its accessible name.
+ * keyboard focus and its accessible name. A click closes the tooltip until the pointer comes back, and focus that a
+ * click or a closing dialog gives the button opens none, so a tooltip never stays over what the action opened.
  */
 export function NamedIconButton({
   name,
   accessibleName,
   joined,
   icon,
+  ref,
+  onClick,
+  onMouseLeave,
+  onBlur,
   ...rest
 }: Omit<Base, 'children' | 'aria-label'> & {
   name: string
@@ -124,13 +129,53 @@ export function NamedIconButton({
   joined?: boolean
   icon: ReactNode
 }) {
+  const [open, setOpen] = useState(false)
+  const clicked = useRef(false)
+  const button = useRef<HTMLButtonElement | null>(null)
+
+  function openChange(next: boolean) {
+    const element = button.current
+    const focusedByPointer =
+      element !== null &&
+      document.activeElement === element &&
+      !element.matches(':focus-visible') &&
+      !element.matches(':hover')
+    if (next && (clicked.current || focusedByPointer)) {
+      return
+    }
+    setOpen(next)
+  }
+
   return (
-    <Tooltip title={name} trigger={['hover', 'focus']}>
+    <Tooltip title={name} trigger={['hover', 'focus']} open={open} onOpenChange={openChange}>
       <Button
         {...rest}
+        ref={(element) => {
+          // The icon role always draws a button, never a link.
+          const target = element as HTMLButtonElement | null
+          button.current = target
+          if (typeof ref === 'function') {
+            ref(target)
+          } else if (ref) {
+            ref.current = target
+          }
+        }}
         type={joined ? 'default' : 'text'}
         aria-label={accessibleName ?? name}
         icon={<span aria-hidden>{icon}</span>}
+        onClick={(event) => {
+          clicked.current = true
+          setOpen(false)
+          onClick?.(event)
+        }}
+        onMouseLeave={(event) => {
+          clicked.current = false
+          onMouseLeave?.(event)
+        }}
+        onBlur={(event) => {
+          clicked.current = false
+          onBlur?.(event)
+        }}
       />
     </Tooltip>
   )

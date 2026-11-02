@@ -1,5 +1,6 @@
 import { Drawer, Flex, Tag, Typography } from 'antd'
 import { Link } from 'react-router'
+import { sizeTokens } from '../platform/designTokens'
 import type { StudioDiagnostic } from '../platform/studio'
 import { useText } from '../platform/texts'
 import { useDesignTokens } from '../platform/themeMode'
@@ -28,8 +29,8 @@ export function StudioProblemsPanel({
       open={open}
       mask={false}
       size={420}
-      // Proposed: it opens under the shell's header and the band, 48 px each, so Validate and Publish… stay in reach.
-      rootStyle={{ top: 96 }}
+      // Proposed: it opens under the shell's header and the band, one bar each, so Validate and Publish… stay in reach.
+      rootStyle={{ top: 2 * sizeTokens.bar }}
       title={t('shell.studio.problems.title')}
       onClose={onClose}
     >

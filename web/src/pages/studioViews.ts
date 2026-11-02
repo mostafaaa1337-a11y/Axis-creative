@@ -21,6 +21,7 @@ export const studioKindGroups: readonly { key: string; kinds: readonly { kind: s
       { kind: 'seed', icon: 'document' },
       { kind: 'sequence', icon: 'tag' },
       { kind: 'dataSource', icon: 'chart' },
+      { kind: 'migration', icon: 'tool' },
     ],
   },
   {
@@ -36,6 +37,8 @@ export const studioKindGroups: readonly { key: string; kinds: readonly { kind: s
     kinds: [
       { kind: 'process', icon: 'process' },
       { kind: 'rule', icon: 'tool' },
+      { kind: 'event', icon: 'tag' },
+      { kind: 'trigger', icon: 'clock' },
     ],
   },
   {
@@ -51,6 +54,7 @@ export const studioKindGroups: readonly { key: string; kinds: readonly { kind: s
     kinds: [
       { kind: 'connector', icon: 'support' },
       { kind: 'endpoint', icon: 'mail' },
+      { kind: 'webhook', icon: 'support' },
     ],
   },
   { key: 'texts', kinds: [{ kind: 'text', icon: 'document' }] },

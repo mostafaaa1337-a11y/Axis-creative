@@ -9,6 +9,7 @@ import { antLocaleFor, dayjsLocaleFor } from './antLocale'
 import { navigationIcon } from './navigationIcons'
 import { NotificationBell } from './NotificationBell'
 import { PreferencesMenu } from './PreferencesMenu'
+import { sizeTokens } from './designTokens'
 import { ShellFooter } from './ShellFooter'
 import { ShellSidebarContext } from './shellSidebar'
 import { SiteMark } from './SiteMark'
@@ -53,7 +54,7 @@ function activeNavigationKey(navigation: readonly NavigationItem[], pathname: st
  * The layout of every site, the platform site and application sites alike. A 48 px header holds the
  * collapse button, the site's mark and title, the notification bell, the app switcher, the language
  * and theme menu and the account button. A site with two or more navigation entries has a sidebar of icons and
- * labels that collapses to a strip of icons. A footer runs across the bottom. Ant Design components
+ * labels that collapses to a strip of icons. A footer runs across the bottom, under the content only beside a sidebar. Ant Design components
  * and dayjs follow the locale. At narrow width, below 992 px, the navigation and the language and
  * theme menu sit in a panel that a Menu button opens and closes, and there is no sidebar. The app
  * switcher stays in the header.
@@ -83,19 +84,6 @@ export function Shell({
   // Proposed: a page with its own navigation claims the sidebar and draws in `pageSidebarSlot`.
   const [pageSidebar, setPageSidebar] = useState(false)
   const [pageSidebarSlot, setPageSidebarSlot] = useState<HTMLElement | null>(null)
-  // Proposed: the footer's height, which the sidebar's navigation leaves free, so the footer scrolling into view does
-  // not push the navigation up while the band beside it stays in place.
-  const footer = useRef<HTMLDivElement>(null)
-  const [footerHeight, setFooterHeight] = useState(0)
-  useEffect(() => {
-    const element = footer.current
-    if (!element) {
-      return
-    }
-    const observer = new ResizeObserver(() => setFooterHeight(element.offsetHeight))
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [])
   // Proposed: a page with its own navigation is a workspace, drawn compact: spacing-md round its content.
   const contentPadding = pageSidebar ? spacing.md : spacing.lg
   const sidebarContext = useMemo(
@@ -153,7 +141,7 @@ export function Shell({
               display: 'flex',
               alignItems: 'center',
               gap: spacing.sm,
-              height: 48,
+              height: sizeTokens.bar,
               lineHeight: 'normal',
               paddingInline: spacing.md,
               background: colour.surface,
@@ -243,8 +231,8 @@ export function Shell({
                 <div
                   style={{
                     position: 'sticky',
-                    top: 48,
-                    maxHeight: `calc(100vh - ${48 + footerHeight}px)`,
+                    top: sizeTokens.bar,
+                    maxHeight: `calc(100vh - ${sizeTokens.bar}px)`,
                     overflowY: 'auto',
                     // Proposed: its scrollbar is the page's own, as the colour scheme draws it, so the two match.
                   }}
@@ -264,13 +252,16 @@ export function Shell({
                 </div>
               </Layout.Sider>
             )}
-            <Layout.Content style={{ padding: contentPadding }}>
-              <ShellSidebarContext.Provider value={sidebarContext}>{children}</ShellSidebarContext.Provider>
-            </Layout.Content>
+            {/* Proposed: beside a sidebar the footer sits under the content only, so the sidebar runs to the bottom of
+                the page and its navigation, which stays under the header, is never pushed up nor cut short. */}
+            <Layout>
+              <Layout.Content style={{ padding: contentPadding }}>
+                <ShellSidebarContext.Provider value={sidebarContext}>{children}</ShellSidebarContext.Provider>
+              </Layout.Content>
+              {sidebar && <ShellFooter legal={legal} />}
+            </Layout>
           </Layout>
-          <div ref={footer}>
-            <ShellFooter legal={legal} />
-          </div>
+          {!sidebar && <ShellFooter legal={legal} />}
         </Layout>
       </ConfigProvider>
     </div>

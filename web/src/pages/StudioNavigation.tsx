@@ -3,6 +3,7 @@ import { ConfigProvider, Dropdown, Menu, Typography, type MenuProps } from 'antd
 import { createElement, useContext } from 'react'
 import { createPortal } from 'react-dom'
 import { selectedItemTint } from '../platform/antTheme'
+import { sizeTokens } from '../platform/designTokens'
 import { navigationIcon } from '../platform/navigationIcons'
 import { useShellSidebar } from '../platform/shellSidebar'
 import { SiteMark } from '../platform/SiteMark'
@@ -169,7 +170,7 @@ export function StudioNavigation({
 
   const navigation = (
     <nav aria-label={t('shell.studio.nav.label')}>
-      {/* Proposed: the application's row is 48 px, as the header band beside it, so their rules line up. It stays in
+      {/* Proposed: the application's row is one bar high, as the band beside it, so their rules line up. It stays in
           place as the band does, and only the entries under it scroll when the sidebar is taller than the window. */}
       <div
         style={{
@@ -177,7 +178,7 @@ export function StudioNavigation({
           top: 0,
           zIndex: 1,
           background: colour.surface,
-          height: 48,
+          height: sizeTokens.bar,
           boxSizing: 'border-box',
           padding: `0 ${spacing.xs}px`,
           borderBottom: `1px solid ${colour.borderSubtle}`,

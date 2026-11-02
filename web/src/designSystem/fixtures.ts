@@ -1177,21 +1177,33 @@ const leaveDiagnostics = [
     resourceId: leavePage,
   },
 ]
+// Proposed: release 3 was published, then release 2 activated again, so release 2 is live with two activations and
+// the newer release 3 can be activated.
+const leaveRelease = (number: number, activatedAt: string, label: string | null, requestId: string | null = null) => ({
+  releaseId: `01a18bb7-ef25-7408-8a42-9716776650a${number}`,
+  number,
+  contentHash: `a${number}`,
+  activatedAt,
+  actor: 'author',
+  actorName: 'Alex Morgan',
+  label,
+  note: null,
+  requestId,
+})
 const leaveReleases = {
   active: { releaseId: '01a18bb7-ef25-7408-8a42-9716776650a2', number: 2, contentHash: 'a2' },
   folderContentHash: 'a3',
   items: [
-    {
-      releaseId: '01a18bb7-ef25-7408-8a42-9716776650a2',
-      number: 2,
-      contentHash: 'a2',
-      activatedAt: '2026-10-27T16:05:00+00:00',
-      actor: 'author',
-      actorName: 'Alex Morgan',
-      label: 'Half days',
-      note: null,
-      requestId: null,
-    },
+    leaveRelease(2, '2026-10-30T08:20:00+00:00', null, '5b1c2d3e-4f50-4a6b-8c7d-9e0f1a2b3c4d'),
+    leaveRelease(3, '2026-10-29T10:45:00+00:00', 'Carry-over'),
+    leaveRelease(2, '2026-10-27T16:05:00+00:00', 'Half days'),
+    leaveRelease(1, '2026-10-20T09:30:00+00:00', 'First release'),
+  ],
+  // Proposed: the files that differ from the live release, as the Overview lists them.
+  changes: [
+    { path: 'entities/leave-request.json', change: 'changed' },
+    { path: 'forms/leave-request-form.json', change: 'added' },
+    { path: 'pages/requests.json', change: 'changed' },
   ],
 }
 
@@ -1263,6 +1275,16 @@ export const routes: Record<string, () => unknown> = {
   // Proposed: two more applications for Studio's overview: one with errors and changes that are not live yet, and one
   // just created, with nothing but what a blank application holds.
   '/api/studio/apps': () => ({ items: [...studioFixtures['/api/studio/apps'].items, studioBlankApp] }),
+  // Proposed: the sites' files, which the Overview reads for the address that opens each site.
+  '/api/studio/apps/PurchaseRequests/resources/0cec2d63-0949-465f-a29e-80b546dfa347': () => ({
+    ...studioItem('0cec2d63-0949-465f-a29e-80b546dfa347', 'site', 'Purchasing', 'sites/purchasing.json'),
+    titles: { en: 'Purchasing', vi: 'Mua hàng' },
+    content: { kind: 'site', name: 'Purchasing', path: 'purchasing', title: { textKey: 'site.title' } },
+  }),
+  '/api/studio/apps/LeaveRequests/resources/5f0c6a1e-2b7d-4c1a-9e3f-0a8b7c6d5e44': () => ({
+    ...studioItem('5f0c6a1e-2b7d-4c1a-9e3f-0a8b7c6d5e44', 'site', 'LeaveRequests', 'sites/leave-requests.json'),
+    content: { kind: 'site', name: 'LeaveRequests', path: 'leave' },
+  }),
   ...studioFolder('LeaveRequests', leaveResources, leaveDiagnostics, leaveReleases),
   ...studioFolder('Inventory', blankResources, [], { active: null, folderContentHash: 'b1', items: [] }),
 }

@@ -323,6 +323,14 @@ export const previews: Record<string, readonly PreviewState[]> = {
       entry: `/studio?app=${studioApp}&view=releases`,
       frameHeight: 600,
     },
+    // Proposed: a release activated again opens to its activations, and a newer release than the live one can be
+    // activated.
+    {
+      caption: 'Releases after activating an older one',
+      draw: () => <ShellPreview />,
+      entry: '/studio?app=LeaveRequests&view=releases',
+      frameHeight: 600,
+    },
     {
       caption: 'Policy matrix',
       draw: () => <ShellPreview />,

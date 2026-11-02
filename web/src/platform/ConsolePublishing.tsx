@@ -9,6 +9,7 @@ import {
 } from './console'
 import { EmptyDash } from './EmptyValue'
 import { markCurrentPage } from './pagination'
+import { releaseActorName } from './studio'
 import { useText } from './texts'
 
 interface ConsolePublishingProps {
@@ -112,7 +113,7 @@ export function ConsolePublishing({ applications, locale }: ConsolePublishingPro
       {
         key: 'activatedBy',
         title: t('shell.console.publishing.activatedBy'),
-        render: (_value: unknown, row) => row.actorName ?? row.actor,
+        render: (_value: unknown, row) => releaseActorName(row, t),
       },
       {
         key: 'activatedAt',

@@ -147,6 +147,10 @@ export interface StudioResourceItem {
   file: string
   version: string
   usedBy: number
+  /** Proposed: the resource's label in each locale that holds its key, or null when it has none. */
+  titles?: Record<string, string> | null
+  /** Proposed: the locale a text resource holds, or null for every other kind. */
+  locale?: string | null
 }
 
 /** A resource with its content, as `GET /api/studio/apps/{application}/resources/{id}` answers. */
@@ -809,6 +813,8 @@ export interface StudioReleases {
   active: { releaseId: string; number: number; contentHash: string } | null
   folderContentHash: string | null
   items: StudioReleaseItem[]
+  /** Proposed: the files of the folder that differ from the live release, by path. */
+  changes?: { path: string; change: 'added' | 'changed' | 'removed' }[] | null
 }
 
 /** A row of the release list. `active` is set on one row only. */
@@ -939,6 +945,57 @@ export function releaseRows(history: StudioReleases): StudioReleaseRow[] {
   })
 }
 
+/**
+ * Proposed: one release of the history. `published` is its first activation, `label` and `note` are the ones its
+ * publish gave, and `live` marks the active release.
+ */
+export interface StudioReleaseGroup {
+  releaseId: string
+  number: number
+  label: string | null
+  note: string | null
+  published: StudioReleaseItem
+  live: boolean
+}
+
+/** Proposed: the release list as one row per release, the highest number first, so a release activated again shows once. */
+export function releaseGroups(history: StudioReleases): StudioReleaseGroup[] {
+  const byRelease = new Map<string, StudioReleaseItem[]>()
+  for (const item of history.items) {
+    byRelease.set(item.releaseId, [...(byRelease.get(item.releaseId) ?? []), item])
+  }
+  return [...byRelease.entries()]
+    .map(([releaseId, items]) => {
+      const oldestFirst = items.toSorted((left, right) => Date.parse(left.activatedAt) - Date.parse(right.activatedAt))
+      return {
+        releaseId,
+        number: oldestFirst[0].number,
+        label: oldestFirst.find((item) => item.label)?.label ?? null,
+        note: oldestFirst.find((item) => item.note)?.note ?? null,
+        published: oldestFirst[0],
+        live: history.active?.releaseId === releaseId,
+      }
+    })
+    .sort((left, right) => right.number - left.number)
+}
+
+/**
+ * Proposed: who activated a release, in words: the person's name, the system for the server's activation at startup, or
+ * the platform operator. A user id with no name left is "someone no longer known", so Studio never shows an id.
+ */
+export function releaseActorName(
+  release: { actor: string; actorName?: string | null },
+  t: (key: string) => string,
+): string {
+  if (release.actorName) {
+    return release.actorName
+  }
+  if (release.actor === 'startup' || release.actor === 'operator') {
+    return t(`shell.studio.releases.actor.${release.actor}`)
+  }
+  return t('shell.studio.releases.actor.unknown')
+}
+
 /** Whether a release is active and the folder compiles to other content than that release. */
 export function folderDiffers(history: StudioReleases): boolean {
   return (
@@ -949,23 +1006,40 @@ export function folderDiffers(history: StudioReleases): boolean {
 }
 
 /** The resources whose name or id contains `search`, ignoring letter case and surrounding spaces. An empty search keeps all. */
-export function filterResources(items: StudioResourceItem[], search: string): StudioResourceItem[] {
+export function filterResources(items: StudioResourceItem[], search: string, locale = 'en'): StudioResourceItem[] {
   const needle = search.trim().toLowerCase()
   if (needle === '') {
     return items
   }
   return items.filter(
-    (item) => item.id.toLowerCase().includes(needle) || (item.name?.toLowerCase().includes(needle) ?? false),
+    (item) =>
+      item.id.toLowerCase().includes(needle) ||
+      (item.name?.toLowerCase().includes(needle) ?? false) ||
+      resourceTitle(item, locale).toLowerCase().includes(needle),
   )
 }
 
-/** The text a resource shows in the list: its name, or its file when it has none. */
-export function resourceTitle(item: StudioResourceItem): string {
-  return item.name ?? item.file
+/**
+ * Proposed: the text Studio names a resource by: its label in the author's locale, then in English, for a resource that
+ * has one. A text resource is named by its language, in the author's language. A resource with no label, which only
+ * authors see, is named by the name its author gave, or its file.
+ */
+export function resourceTitle(item: StudioResourceItem, locale = 'en'): string {
+  if (item.locale) {
+    try {
+      const name = new Intl.DisplayNames([locale], { type: 'language' }).of(item.locale)
+      if (name && name !== item.locale) {
+        return name.charAt(0).toLocaleUpperCase(locale) + name.slice(1)
+      }
+    } catch {
+      // An invalid tag has no name.
+    }
+  }
+  return item.titles?.[locale] ?? item.titles?.en ?? item.name ?? item.file
 }
 
 /** Groups resources by kind. Kinds are sorted ordinally, and each group's items by name, or by file when a resource has no name. */
-export function groupByKind(items: StudioResourceItem[]): ResourceGroup[] {
+export function groupByKind(items: StudioResourceItem[], locale = 'en'): ResourceGroup[] {
   const groups = new Map<string, StudioResourceItem[]>()
   for (const item of items) {
     const group = groups.get(item.kind)
@@ -979,7 +1053,9 @@ export function groupByKind(items: StudioResourceItem[]): ResourceGroup[] {
     .sort(([left], [right]) => compareOrdinal(left, right))
     .map(([kind, members]) => ({
       kind,
-      items: members.toSorted((left, right) => compareOrdinal(resourceTitle(left), resourceTitle(right))),
+      items: members.toSorted((left, right) =>
+        compareOrdinal(resourceTitle(left, locale), resourceTitle(right, locale)),
+      ),
     }))
 }
 

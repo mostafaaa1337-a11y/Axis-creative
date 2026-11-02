@@ -1,9 +1,9 @@
 import { Breadcrumb, Flex, Typography } from 'antd'
 import { useContext, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import { sizeTokens } from './designTokens'
 import { ShellSidebarContext } from './shellSidebar'
 import { useText } from './texts'
-import { visuallyHidden } from './visuallyHidden'
 import { useDesignTokens } from './themeMode'
 
 /** One step of a page's breadcrumb. A step with `to` is a link, and the last step has none. */
@@ -24,7 +24,8 @@ export function PageLayout({
   actions,
   compact: compactProp,
   status,
-  bandTitle = 'shown',
+  subtitle,
+  headingExtra,
   children,
 }: {
   title: string
@@ -32,24 +33,19 @@ export function PageLayout({
   /** Proposed: the page's own actions, on the right of its title, such as Studio's Validate and Publish. */
   actions?: ReactNode
   /**
-   * Proposed: a compact page, such as every page of Studio, draws its band as one row: the breadcrumb, whose last step
-   * is the page's title, then the actions. Without it, a workspace that claimed the shell's sidebar is compact.
+   * Proposed: a compact page, such as every page of Studio, draws its band as one row of the page's state and actions,
+   * and heads its content with the title. Without it, a workspace that claimed the shell's sidebar is compact.
    */
   compact?: boolean
-  /**
-   * Proposed: what a compact band shows of the page's state, after the breadcrumb, such as Studio's errors and changes
-   * that are not live.
-   */
+  /** Proposed: what a compact band shows of the page's state, such as Studio's errors and changes that are not live. */
   status?: ReactNode
-  /**
-   * Proposed: how a compact band holds the page's title. `hidden` when the sidebar already names the page, as a Studio
-   * list or view: the band keeps the title as its heading for assistive technology only, and shows the status in its
-   * place. `none` when the page's content heads itself, as an open Studio resource, so the page has one heading.
-   */
-  bandTitle?: 'shown' | 'hidden' | 'none'
+  /** Proposed: one line in textMuted under a compact page's heading, such as an open resource's file. */
+  subtitle?: ReactNode
+  /** Proposed: what sits on the right of a compact page's heading, such as a scenario's Run scenario. */
+  headingExtra?: ReactNode
   children: ReactNode
 }) {
-  const { spacing } = useDesignTokens()
+  const { colour, spacing } = useDesignTokens()
   const contentPadding = useContext(ShellSidebarContext)?.contentPadding ?? spacing.lg
   const compact = compactProp ?? contentPadding < spacing.lg
   const title4 = (
@@ -66,16 +62,28 @@ export function PageLayout({
     title4
   )
 
+  if (compact) {
+    // Proposed: every compact page has one heading, the page's title, at the head of its content: the band holds no
+    // title, only the page's state and actions, and a page with neither has no band. The heading has no margin of its
+    // own, so it sits as far below the band and above the content as the page area's padding.
+    return (
+      <Flex vertical gap={contentPadding}>
+        {(actions || status) && <CompactBand actions={actions} status={status} />}
+        <Flex vertical gap={4}>
+          <Flex align="center" justify="space-between" gap="middle" wrap>
+            {title4}
+            {headingExtra}
+          </Flex>
+          {subtitle && <Typography.Text style={{ color: colour.textMuted }}>{subtitle}</Typography.Text>}
+        </Flex>
+        {children}
+      </Flex>
+    )
+  }
+
   return (
-    // Proposed: under a compact band the content starts as far from it as from the page area's sides.
-    <Flex vertical gap={compact ? contentPadding : 'middle'}>
-      {breadcrumb && compact ? (
-        <CompactBand steps={breadcrumb} title={title} actions={actions} status={status} bandTitle={bandTitle} />
-      ) : breadcrumb ? (
-        <HeaderBand steps={breadcrumb}>{heading}</HeaderBand>
-      ) : (
-        heading
-      )}
+    <Flex vertical gap="middle">
+      {breadcrumb ? <HeaderBand steps={breadcrumb}>{heading}</HeaderBand> : heading}
       {children}
     </Flex>
   )
@@ -87,38 +95,21 @@ function useBandMargin() {
   return useContext(ShellSidebarContext)?.contentPadding ?? spacing.lg
 }
 
-/**
- * Proposed: the compact band, one row 48 px high: the breadcrumb, whose last step is the page's title as its heading,
- * and the actions on the right.
- */
-function CompactBand({
-  steps,
-  title,
-  actions,
-  status,
-  bandTitle,
-}: {
-  steps: readonly BreadcrumbStep[]
-  title: string
-  actions?: ReactNode
-  status?: ReactNode
-  bandTitle: 'shown' | 'hidden' | 'none'
-}) {
-  const t = useText()
+/** Proposed: the compact band, one bar high: the page's state on the left and its actions on the right. */
+function CompactBand({ actions, status }: { actions?: ReactNode; status?: ReactNode }) {
   const { colour, spacing } = useDesignTokens()
   const pad = useBandMargin()
-  const earlier = steps.slice(0, -1)
   return (
     <div
       style={{
         margin: `-${pad}px -${pad}px 0`,
         // Proposed: the compact band, which holds the page's actions, stays under the shell's header as the page scrolls.
         position: 'sticky',
-        top: 48,
+        top: sizeTokens.bar,
         zIndex: 9,
-        // 48 px with its rule, as the shell's header and Studio's application row, so their rules line up.
+        // One bar high with its rule, as the shell's header and Studio's application row, so their rules line up.
         padding: `0 ${pad}px`,
-        minHeight: 48,
+        minHeight: sizeTokens.bar,
         boxSizing: 'border-box',
         display: 'flex',
         alignItems: 'center',
@@ -127,28 +118,6 @@ function CompactBand({
         borderBottom: `1px solid ${colour.borderSubtle}`,
       }}
     >
-      {bandTitle === 'shown' || earlier.length > 0 ? (
-        <Breadcrumb
-          aria-label={t('shell.breadcrumb.label')}
-          style={{ flex: '0 1 auto', minWidth: 0 }}
-          items={[
-            ...earlier.map((step) => ({
-              title: step.to ? <Link to={step.to}>{step.label}</Link> : <span>{step.label}</span>,
-            })),
-            {
-              title: (
-                <Typography.Title level={5} aria-current="page" style={{ display: 'inline', margin: 0 }}>
-                  {title}
-                </Typography.Title>
-              ),
-            },
-          ]}
-        />
-      ) : bandTitle === 'hidden' ? (
-        <Typography.Title level={5} style={{ ...visuallyHidden, margin: 0 }}>
-          {title}
-        </Typography.Title>
-      ) : null}
       {status}
       <div style={{ flex: 1 }} />
       {actions}

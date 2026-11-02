@@ -1,5 +1,5 @@
 import { Alert, Button, Flex, Tag, Typography } from 'antd'
-import { useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import {
   fetchResourceReferences,
   fetchTextReferences,
@@ -10,6 +10,7 @@ import {
 } from '../platform/studio'
 import { useStudioConnection } from '../platform/studioConnection'
 import { useText } from '../platform/texts'
+import { StudioResourceTitle } from './studioResourceTitle'
 
 type Direction = 'uses' | 'usedBy'
 
@@ -106,6 +107,7 @@ function ReferenceEntry({
   onOpen: OpenResource
 }) {
   const t = useText()
+  const titleOf = useContext(StudioResourceTitle)
   const { lost } = useStudioConnection()
   const { node } = entry
   const expandable = node.type === 'resource' || node.type === 'text'
@@ -142,10 +144,10 @@ function ReferenceEntry({
               style={{ padding: 0, height: 'auto' }}
               onClick={() => onOpen(node.id, direction === 'usedBy' ? entry.path : null)}
             >
-              {nodeTitle(node)}
+              {nodeTitle(node, titleOf)}
             </Button>
           ) : (
-            <span>{nodeTitle(node)}</span>
+            <span>{nodeTitle(node, titleOf)}</span>
           )}
           {expandable && (
             <Button type="text" size="small" aria-expanded={expanded} onClick={toggle}>
@@ -194,9 +196,9 @@ function loadDetails(application: string, node: StudioReferenceNode): Promise<St
   return undefined
 }
 
-function nodeTitle(node: StudioReferenceNode): string {
+function nodeTitle(node: StudioReferenceNode, titleOf: (id: string) => string | undefined): string {
   if (node.type === 'resource') {
-    return node.name ?? node.file
+    return titleOf(node.id) ?? node.name ?? node.file
   }
   if (node.type === 'text') {
     return node.key
