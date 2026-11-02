@@ -14,6 +14,12 @@ namespace Axis.Configuration.Compilation;
 internal sealed record LayerMergeResult(JsonNode Merged, IReadOnlyDictionary<string, string> LayerPathByMergedPath);
 
 /// <summary>
+/// The module version that a layer applied to before, when the application's pin moves to another version: the
+/// module and both versions, and the root of the same resource in the old version.
+/// </summary>
+internal sealed record LayerUpgrade(string ModuleId, string FromVersion, string ToVersion, JsonElement Previous);
+
+/// <summary>
 /// Applies a <c>layer</c>'s <c>changes</c> to a module resource. Objects merge property by property. A list
 /// that <see cref="ListKeys"/> keys merges element by element: an element with a key the module's list has
 /// changes that element, one without it is added at the end, and one with <c>"remove": true</c> is dropped.
@@ -38,14 +44,17 @@ internal static class LayerMerger
     /// <paramref name="kind"/>. A remove of an unknown key and a remove that holds more than its key are
     /// added to <paramref name="diagnostics"/>, and the merge goes on without them. So are a placement with both
     /// <c>after</c> and <c>before</c> and one whose anchor names no element of the merged list.
+    /// With an <paramref name="upgrade"/>, a changed element whose key the new version lacks but the old version
+    /// has is reported as <see cref="DiagnosticCodes.LayerKeyDroppedByModuleUpgrade"/> and left out, because the
+    /// layer meant to change it and would add a broken copy instead.
     /// </summary>
-    public static LayerMergeResult Merge(string kind, JsonElement module, LayerResource layer, List<Diagnostic> diagnostics)
+    public static LayerMergeResult Merge(string kind, JsonElement module, LayerResource layer, List<Diagnostic> diagnostics, LayerUpgrade? upgrade = null)
     {
         var merged = JsonNode.Parse(module.GetRawText())!;
         var map = new Dictionary<string, string>(StringComparer.Ordinal);
         if (merged is JsonObject root && layer.Changes.ValueKind == JsonValueKind.Object)
         {
-            new Merging(kind, layer, map, diagnostics).MergeObject(root, layer.Changes, "", "/changes", _identityProperties);
+            new Merging(kind, layer, map, diagnostics, upgrade).MergeObject(root, layer.Changes, "", "/changes", _identityProperties, upgrade?.Previous);
         }
 
         return new LayerMergeResult(merged, map);
@@ -75,9 +84,9 @@ internal static class LayerMerger
         }
     }
 
-    private sealed class Merging(string kind, LayerResource layer, Dictionary<string, string> map, List<Diagnostic> diagnostics)
+    private sealed class Merging(string kind, LayerResource layer, Dictionary<string, string> map, List<Diagnostic> diagnostics, LayerUpgrade? upgrade)
     {
-        public void MergeObject(JsonObject target, JsonElement change, string mergedPath, string layerPath, string[] skipped)
+        public void MergeObject(JsonObject target, JsonElement change, string mergedPath, string layerPath, string[] skipped, JsonElement? previous)
         {
             foreach (var property in change.EnumerateObject())
             {
@@ -90,16 +99,20 @@ internal static class LayerMerger
                 var propertyMergedPath = mergedPath + segment;
                 var propertyLayerPath = layerPath + segment;
                 var current = target[property.Name];
+                JsonElement? previousChild = previous is { ValueKind: JsonValueKind.Object } previousObject
+                    && previousObject.TryGetProperty(property.Name, out var found)
+                    ? found
+                    : null;
                 if (current is JsonObject currentObject && property.Value.ValueKind == JsonValueKind.Object)
                 {
-                    MergeObject(currentObject, property.Value, propertyMergedPath, propertyLayerPath, []);
+                    MergeObject(currentObject, property.Value, propertyMergedPath, propertyLayerPath, [], previousChild);
                 }
                 else if (current is JsonArray currentList
                     && property.Value.ValueKind == JsonValueKind.Array
                     && ListKeys.TryGet(kind, property.Name, out var listKey)
                     && listKey.Mode == ListKeyMode.Keyed)
                 {
-                    target[property.Name] = MergeList(currentList, property.Value, listKey, propertyMergedPath, propertyLayerPath);
+                    target[property.Name] = MergeList(currentList, property.Value, listKey, propertyMergedPath, propertyLayerPath, previousChild);
                 }
                 else
                 {
@@ -109,12 +122,15 @@ internal static class LayerMerger
             }
         }
 
-        private JsonArray MergeList(JsonArray module, JsonElement change, ListKey listKey, string mergedPath, string layerPath)
+        private JsonArray MergeList(JsonArray module, JsonElement change, ListKey listKey, string mergedPath, string layerPath, JsonElement? previous)
         {
             var keyProperty = listKey.Key!;
+            var previousElements = previous is { ValueKind: JsonValueKind.Array } previousList
+                ? previousList.EnumerateArray().ToList()
+                : [];
             var placements = new List<Placement>();
             var entries = module
-                .Select(node => new Entry(KeyOf(node, keyProperty), node?.DeepClone()))
+                .Select(node => new Entry(KeyOf(node, keyProperty), node?.DeepClone()) { Previous = PreviousOf(previousElements, KeyOf(node, keyProperty), keyProperty) })
                 .ToList();
             var index = 0;
             foreach (var element in change.EnumerateArray())
@@ -131,6 +147,15 @@ internal static class LayerMerger
                     {
                         entries.RemoveAt(position);
                     }
+                }
+                else if (position < 0 && key is not null && PreviousOf(previousElements, key, keyProperty) is not null)
+                {
+                    diagnostics.Add(new Diagnostic(
+                        DiagnosticCodes.LayerKeyDroppedByModuleUpgrade,
+                        $"Version {upgrade?.ToVersion} of the module '{upgrade?.ModuleId}' has no element with the {keyProperty} '{key}' that version {upgrade?.FromVersion} has and this layer changes.",
+                        layer.File,
+                        $"{elementLayerPath}/{ModuleChecker.Escape(keyProperty)}",
+                        layer.Id));
                 }
                 else
                 {
@@ -183,7 +208,7 @@ internal static class LayerMerger
                     }
                     else if (node is JsonObject nodeObject && piece.ValueKind == JsonValueKind.Object)
                     {
-                        MergeObject(nodeObject, piece, elementMergedPath, pieceLayerPath, listKey.Ordered ? [keyProperty, AfterProperty, BeforeProperty] : [keyProperty]);
+                        MergeObject(nodeObject, piece, elementMergedPath, pieceLayerPath, listKey.Ordered ? [keyProperty, AfterProperty, BeforeProperty] : [keyProperty], entry.Previous);
                     }
                     else if (!(node is JsonValue && piece.ValueKind == JsonValueKind.String && entry.Key is not null))
                     {
@@ -328,7 +353,29 @@ internal static class LayerMerger
             public JsonNode? Node { get; } = node;
 
             public List<(JsonElement Element, int LayerIndex)> Pieces { get; } = [];
+
+            /// <summary>The element with the same key in the old version of the module, when there is one.</summary>
+            public JsonElement? Previous { get; init; }
         }
+    }
+
+    /// <summary>The element of an old version's list with <paramref name="key"/>, ignoring letter case.</summary>
+    private static JsonElement? PreviousOf(List<JsonElement> previousElements, string? key, string keyProperty)
+    {
+        if (key is null)
+        {
+            return null;
+        }
+
+        foreach (var element in previousElements)
+        {
+            if (string.Equals(KeyOf(element, keyProperty), key, StringComparison.OrdinalIgnoreCase))
+            {
+                return element;
+            }
+        }
+
+        return null;
     }
 
     private static string? KeyOf(JsonNode? node, string keyProperty) => node switch
