@@ -125,8 +125,8 @@ Compilation applies each layer to the resource of the pinned module version, bef
   A layer on a `contract` or a `scenario` is stored and not applied _(planned for M25)_.
 - **Checks of the layer itself.** A key in `changes` that the module's resource does not have, as a
   change, a remove or an anchor of `after` or `before`, is a diagnostic. So is a property that the
-  kind does not have. A layer never matches by position. The checks are `AXC0362` for an unknown key
-  in a remove, `AXC0363` for a remove that holds more than its key and `AXC0364` for an unknown
+  kind does not have. A layer never matches by position. The checks are `AXC0363` for an unknown key
+  in a remove, `AXC0364` for a remove that holds more than its key and `AXC0365` for an unknown
   property, each reported at its path under `/changes` in the layer file. A layer with one of them is
   not applied. An element whose key the module's list lacks is an added element until `after` and
   `before` exist, so only a remove can name an unknown key.

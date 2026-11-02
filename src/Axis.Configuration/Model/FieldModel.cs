@@ -8,7 +8,7 @@ namespace Axis.Configuration.Model;
 /// <see cref="Max"/> for integer, decimal, date and date-time, <see cref="Precision"/> and <see cref="Scale"/> for decimal and
 /// money, <see cref="Currency"/> and <see cref="CurrencyField"/> for money, <see cref="Values"/> for enum,
 /// <see cref="Target"/> for reference, references and child collection,
-/// <see cref="TargetDisplayField"/> for reference and references, <see cref="MaxSize"/> and <see cref="Accept"/> for file,
+/// <see cref="TargetDisplayField"/> for reference and references, <see cref="Match"/> for reference, <see cref="MaxSize"/> and <see cref="Accept"/> for file,
 /// and <see cref="Sequence"/>, <see cref="Creator"/> and <see cref="Searchable"/> for text, and <see cref="Default"/> for text,
 /// integer, decimal, money, boolean, date, date-time and enum.
 /// </summary>
@@ -99,6 +99,9 @@ public sealed record FieldModel
     /// column with an index, and every write stores the hash there.
     /// </summary>
     public bool ExactLookup { get; init; }
+
+    /// <summary>How a reference field finds its record by a unique field of the target, or null when it has no match.</summary>
+    public FieldMatchModel? Match { get; init; }
 
     /// <summary>
     /// Whether the field is stored in a column of its entity's table. A child collection has no

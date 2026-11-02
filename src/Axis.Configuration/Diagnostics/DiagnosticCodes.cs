@@ -343,7 +343,8 @@ public static class DiagnosticCodes
     public const string DuplicateProcessElementName = "AXC0359";
     public const string DuplicateFormStepName = "AXC0360";
     public const string DuplicatePageElementName = "AXC0361";
-    public const string UnknownLayerKey = "AXC0362";
-    public const string InvalidLayerRemove = "AXC0363";
-    public const string UnknownLayerProperty = "AXC0364";
+    public const string InvalidMatch = "AXC0362";
+    public const string UnknownLayerKey = "AXC0363";
+    public const string InvalidLayerRemove = "AXC0364";
+    public const string UnknownLayerProperty = "AXC0365";
 }
