@@ -7,8 +7,9 @@ changes anything else in Studio through [customization layers](customization-lay
 [module contracts](module-contracts.md) hold whatever either of them changes.
 [D102](../decisions/d102-built-in-modules-open-to-change-and-bound-by-a-contract.md) agrees the
 idea, and [D124](../decisions/d124-the-organization-and-approvals-modules.md) agrees what the modules
-hold. Everything here is _(planned for M26)_. The `service-desk` and `assets` modules are
-_(planned for M30)_.
+hold. `organization` 1.0.0 exists under `modules/organization`, with its entities, data sources, rule,
+role slots and texts. Its contracts and pages, the `approvals` module and the built-in application
+are _(planned for M26)_. The `service-desk` and `assets` modules are _(planned for M30)_.
 
 The conventions of [architecture.md](../architecture.md) apply. Diagnostic codes come with the
 issues that build each check.
@@ -24,8 +25,11 @@ issues that build each check.
   and the folder holds the roles, a site, an identity provider and texts. It holds no entity,
   process, page or policy of its own.
 - **Installed with Axis.** `scripts/build.sh`, `scripts/dev.sh` and the E2E run install the modules
-  under `artifacts/modules/` and the built-in applications under `artifacts/templates/`, next to the
-  samples. The images hold them in `/modules` and `/templates`, so every installation has them.
+  under `artifacts/modules/`, next to the sample modules, and the built-in applications _(planned
+  for M26)_ under `artifacts/templates/`. The development images hold the modules in `/modules`
+  today. The production images `axis-server`, `axis-worker` and `axis-admin` do not yet, and the
+  built-in applications are not installed yet. Shipping them in every installation _(planned for
+  M26)_ needs its own design, because the Helm chart mounts a volume over `/modules`.
 - **Creating an application from one.** Studio's new application dialog lists the built-in
   applications first, marked as built in, then the templates. Creating one copies the thin folder,
   as any template does, so the application declares the modules instead of copying them, and every
@@ -37,7 +41,9 @@ issues that build each check.
 ## The organization module
 
 `organization` holds the departments and the employees of the business, which other modules route
-work by. It keeps no personal data beyond what that needs.
+work by. It keeps no personal data beyond what that needs. Version 1.0.0 holds the entities, the
+data sources, the rule, the role slots and the texts below. The contracts and the pages are
+_(planned for M26)_.
 
 - **`Department`:** `code`, unique, in capital letters, `name`, `parent`, a reference to another
   department, `head`, a reference to an employee, and `active`.
@@ -54,10 +60,13 @@ work by. It keeps no personal data beyond what that needs.
   asks.
 - **Linking an account.** An administrator invites the person on the
   [users page](user-administration.md), then picks the account in the employee's `user` field,
-  which lists the tenant's users.
-- **Rules.** `IsDelegating(from, until)` is true when today is between the two dates. Other modules
+  which lists the tenant's users _(planned for M26)_. Until then `user` is a text field.
+- **Data sources.** `Departments` lists the department fields. `Employees` lists the employee
+  fields except `phone`, so a list carries no personal data. A form can still show the phone.
+- **Rules.** `IsDelegating(from, until)` is true when today, in the application's time zone, is
+  between the two dates, both days included, and false when either date is empty. Other modules
   call it as `organization:IsDelegating(…)`.
-- **Contracts:**
+- **Contracts** _(planned for M26)_**:**
   - `Department`: a department is not its own parent.
   - `Employee`: an employee is not their own manager or their own delegate, and a delegate needs
     both dates, the second not before the first.
@@ -65,7 +74,7 @@ work by. It keeps no personal data beyond what that needs.
     only `phone`, `delegate`, `delegateFrom` and `delegateUntil` of the employee whose `user` is
     their own.
 - **Role slots.** `admin` and `member`.
-- **Pages.** Departments and Employees, each a table with a form, and "Out of office", where a
+- **Pages** _(planned for M26)_**.** Departments and Employees, each a table with a form, and "Out of office", where a
   member sets their own delegate and dates.
 - **Texts** in `en` and `vi`.
 

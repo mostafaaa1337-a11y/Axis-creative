@@ -19,7 +19,7 @@ function runSmoke({ changed, failing = [] } = {}) {
       'scripts/smoke.sh',
       'scripts/lib/test-results.sh',
       'scripts/lib/affected.mjs',
-      'scripts/lib/install-sample-modules.sh',
+      'scripts/lib/install-modules.sh',
       'scripts/test-report.mjs',
     ]) {
       mkdirSync(dirname(join(dir, file)), { recursive: true })
