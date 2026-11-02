@@ -4,5 +4,28 @@
   "name": "NewIntake",
   "formatVersion": 1,
   "title": { "textKey": "intake.pages.newIntake.title" },
-  "widgets": [{ "type": "form", "name": "intakeForm", "form": "IntakeForm" }]
+  "widgets": [
+    { "type": "form", "name": "intakeForm", "form": "IntakeForm" },
+    {
+      "type": "tabs",
+      "name": "intakeTabs",
+      "tabs": [
+        {
+          "name": "details",
+          "label": { "textKey": "intake.pages.newIntake.details" },
+          "widgets": [{ "type": "table", "name": "detailsTable", "entity": "Intake" }]
+        },
+        {
+          "name": "notes",
+          "label": { "textKey": "intake.pages.newIntake.notes" },
+          "widgets": [{ "type": "kpi", "name": "notesTotal", "dataSource": "IntakeTotals", "measure": "intakeCount", "label": { "textKey": "intake.pages.newIntake.notes" } }]
+        },
+        {
+          "name": "history",
+          "label": { "textKey": "intake.pages.newIntake.history" },
+          "widgets": [{ "type": "kpi", "name": "historyTotal", "dataSource": "IntakeTotals", "measure": "intakeCount", "label": { "textKey": "intake.pages.newIntake.history" } }]
+        }
+      ]
+    }
+  ]
 }

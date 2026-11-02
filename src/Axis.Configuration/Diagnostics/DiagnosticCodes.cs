@@ -348,4 +348,6 @@ public static class DiagnosticCodes
     public const string UnknownLayerKey = "AXC0364";
     public const string InvalidLayerRemove = "AXC0365";
     public const string UnknownLayerProperty = "AXC0366";
+    public const string LayerAfterAndBefore = "AXC0367";
+    public const string UnknownLayerAnchor = "AXC0368";
 }

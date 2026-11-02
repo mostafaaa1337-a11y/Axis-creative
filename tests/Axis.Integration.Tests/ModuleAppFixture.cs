@@ -26,7 +26,8 @@ namespace Axis.Integration.Tests;
 /// <c>ledgers</c> <c>Claim</c> <c>entryRecorded</c> effect and the <c>claims</c> <c>viewer</c> ceiling slot. The test
 /// authentication scheme signs in <c>relax-clerk</c> and <c>relax-auditor</c>, who hold <c>clerk</c> and <c>auditor</c> there only.
 /// ModuleLayerApp declares only the <c>intake</c> module and maps its <c>clerk</c> slot to <c>clerk</c>. Its layer on the
-/// module's <c>IntakeForm</c> adds the <c>notes</c> field, and its site <c>modulelayer</c> lists the module's NewIntake page. The test
+/// module's <c>IntakeForm</c> adds the <c>notes</c> field, its layer on the NewIntake page adds a <c>review</c> tab after the
+/// second tab, and its site <c>modulelayer</c> lists the module's NewIntake page. The test
 /// authentication scheme signs in <c>layer-clerk</c>, who holds <c>clerk</c> there only.
 /// </summary>
 public sealed class ModuleAppFixture : IAsyncLifetime

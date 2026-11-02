@@ -6,6 +6,10 @@
   "locale": "en",
   "texts": {
     "intake.intakeForm.title": "Intake",
-    "intake.pages.newIntake.title": "New intake"
+    "intake.pages.newIntake.title": "New intake",
+    "intake.pages.newIntake.details": "Details",
+    "intake.pages.newIntake.notes": "Notes",
+    "intake.pages.newIntake.history": "History",
+    "intake.pages.newIntake.review": "Review"
   }
 }
