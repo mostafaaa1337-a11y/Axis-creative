@@ -1155,6 +1155,39 @@ public sealed class ProcessCompilerTests
     }
 
     [Fact]
+    public void A_connector_output_cannot_write_a_matched_reference()
+    {
+        using var folder = Folder(
+            Process("Order", $$"""
+                [
+                  { "name": "call", "type": "operation", "operation": "callConnector", {{CallCreateOrder}} {{CreateOrderInput}} "output": { "orderNumber": "approver" }, "next": "done" },
+                  { "name": "done", "type": "end" }
+                ]
+                """, start: "call"),
+            Purchasing)
+            .With("entities/order.json", $$"""
+                { "id": "{{OrderId}}", "kind": "entity", "name": "Order", "formatVersion": 1,
+                  "fields": [
+                    { "name": "amount", "type": "decimal" },
+                    { "name": "status", "type": "text" },
+                    { "name": "approver", "type": "reference", "target": "Customer", "match": { "field": "name", "from": "status" } }
+                  ] }
+                """)
+            .With("entities/customer.json", """
+                { "id": "11111111-1111-4111-8111-111111111113", "kind": "entity", "name": "Customer", "formatVersion": 1,
+                  "displayField": "name", "fields": [ { "name": "name", "type": "text", "required": true, "unique": true } ] }
+                """);
+
+        var result = ApplicationCompiler.Compile(folder.Path);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal(
+            (DiagnosticCodes.InvalidOutputField, "processes/order-review.json", "/steps/0/output/orderNumber", "The field 'approver' is set by its match, so an output cannot write it."),
+            (diagnostic.Code, diagnostic.File, diagnostic.Path, diagnostic.Message));
+        Assert.Null(result.Model);
+    }
+
+    [Fact]
     public void A_connector_call_compiles_with_declared_names_inputs_in_operation_order_and_the_retry_defaults()
     {
         using var folder = Folder(

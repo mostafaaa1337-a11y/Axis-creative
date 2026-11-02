@@ -281,6 +281,47 @@ public sealed class ApplicationSitesTests
         }
     }
 
+    [Fact]
+    public void Form_marks_a_matched_reference_as_read_only()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"axis-sites-{Guid.NewGuid():N}");
+        try
+        {
+            Write(root, "application.json", """{ "id": "0d3a1c52-2f0b-4b1e-9a51-6c0f7a1d2e01", "kind": "application", "name": "Sample", "formatVersion": 1 }""");
+            Write(root, "entities/badge.json", """
+                { "id": "55555555-5555-4555-8555-555555555511", "kind": "entity", "name": "Badge", "formatVersion": 1, "displayField": "holder",
+                  "fields": [ { "name": "holder", "type": "text", "required": true, "unique": true } ] }
+                """);
+            Write(root, "entities/visit.json", """
+                { "id": "55555555-5555-4555-8555-555555555512", "kind": "entity", "name": "Visit", "formatVersion": 1,
+                  "fields": [
+                    { "name": "holder", "type": "text" },
+                    { "name": "badge", "type": "reference", "target": "Badge", "match": { "field": "holder", "from": "holder" } } ] }
+                """);
+            Write(root, "forms/visit-form.json", """
+                { "id": "88888888-8888-4888-8888-888888888811", "kind": "form", "name": "VisitForm", "formatVersion": 1, "entity": "Visit",
+                  "sections": [ { "name": "main", "title": { "textKey": "visit.main" }, "fields": [ { "field": "holder" }, { "field": "badge" } ] } ] }
+                """);
+            Write(root, "texts/en.json", """
+                { "id": "77777777-7777-4777-8777-777777777711", "kind": "text", "name": "TextsEn", "formatVersion": 1, "locale": "en",
+                  "texts": { "visit.main": "Visit" } }
+                """);
+
+            var result = ApplicationCompiler.Compile(root);
+            Assert.Empty(result.Diagnostics);
+            Assert.NotNull(result.Model);
+
+            var fields = ApplicationSites.DescribeForm(result.Model, "VisitForm").Sections.SelectMany(section => section.Fields).ToDictionary(field => field.Name);
+
+            Assert.True(fields["badge"].ReadOnly);
+            Assert.False(fields["holder"].ReadOnly);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static void Write(string root, string relativePath, string content)
     {
         var fullPath = Path.Combine(root, relativePath);

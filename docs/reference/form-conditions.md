@@ -30,7 +30,7 @@ hidden or `readOnlyWhen` field.
   marked `required` cannot have `visibleWhen`, because the entity would still
   require a field nobody can fill.
 - **Read-only.** `readOnly: true` wins over `readOnlyWhen`. A computed,
-  sequence or creator field stays read-only.
+  sequence, creator or matched reference field stays read-only.
 - **When evaluated.** The server evaluates the conditions on the record as it
   will be stored, after computed fields are calculated. This is the point
   where validations run. The SPA gets the answers from the

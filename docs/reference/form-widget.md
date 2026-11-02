@@ -51,8 +51,8 @@ and Dn refers to [decisions.md](../decisions.md). The rest of the frontend is in
     `{ "field": "quantity", "width": 4 }` takes a third of the row.
   - A field appears at most once in the form. A field the form does not list
     is not shown and never sent.
-  - Computed, sequence and creator fields are always read-only, whatever
-    `readOnly` says.
+  - Computed, sequence, creator and matched reference fields are always
+    read-only, whatever `readOnly` says.
   - On a page, `readOnly` only shapes the UI. The record API enforces the
     user's field write grants, so it still accepts a read-only field that an
     `update` grant covers. In a task, the server

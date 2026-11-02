@@ -16,6 +16,8 @@
     { "name": "gaugeRead", "entity": "Gauge", "actions": ["read", "create", "update"] },
     { "name": "readingRead", "entity": "Reading", "actions": ["read", "create", "update", "delete"] },
     { "name": "expenseRead", "entity": "Expense", "actions": ["read", "create", "update", "delete"] },
+    { "name": "badgeRead", "entity": "Badge", "actions": ["read", "create", "update", "import"] },
+    { "name": "visitRead", "entity": "Visit", "actions": ["read", "create", "update", "import"] },
     { "name": "activeItemsRead", "dataSource": "ActiveItems", "actions": ["read"] },
     { "name": "itemTotalsByDepartmentRead", "dataSource": "ItemTotalsByDepartment", "actions": ["read"] },
     { "name": "itemAveragesByDepartmentRead", "dataSource": "ItemAveragesByDepartment", "actions": ["read"] },

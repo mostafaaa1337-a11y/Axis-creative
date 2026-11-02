@@ -646,6 +646,7 @@ public sealed class ModuleContractTests
     [InlineData("""{ "createdBy": "'x'" }""", "createdBy")]
     [InlineData("""{ "items": "'x'" }""", "items")]
     [InlineData("""{ "lines": "'x'" }""", "lines")]
+    [InlineData("""{ "matched": "id" }""", "matched")]
     public void An_effect_value_key_that_names_no_writable_field_is_axc0346(string values, string key)
     {
         var diagnostic = Single(Contract(Lifecycle(), extra: Effects(Effect(values: values))));
@@ -776,6 +777,7 @@ public sealed class ModuleContractTests
                   "fields": [
                     { "name": "title", "type": "text", "required": true },
                     { "name": "amount", "type": "integer" },
+                    { "name": "code", "type": "text", "unique": true },
                     { "name": "status", "type": "enum", "values": ["draft", "submitted", "approved"], "required": true },
                     { "name": "stage", "type": "enum", "values": ["a", "b"] },
                     { "name": "locked", "type": "enum", "values": ["a", "b"], "required": true, "sensitive": true },
@@ -797,6 +799,7 @@ public sealed class ModuleContractTests
                     { "name": "outcome", "type": "text" },
                     { "name": "decidedBy", "type": "text" },
                     { "name": "note", "type": "text" },
+                    { "name": "matched", "type": "reference", "target": "Request", "match": { "field": "code", "from": "note" } },
                     { "name": "total", "type": "integer", "expression": "1 + 1" },
                     { "name": "createdBy", "type": "text", "creator": true },
                     { "name": "items", "type": "child-collection", "target": "Item" }
