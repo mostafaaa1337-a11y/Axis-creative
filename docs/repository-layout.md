@@ -36,7 +36,7 @@ tests/
     fixtures/release-app/ application a spec activates during the run, to test releases
     fixtures/subprocess-app/ parent and child sub-process the E2E server activates, for the inspector journey
 modules/
-  organization/           built-in module, as configuration, installed with Axis: departments, employees, the IsDelegating rule
+  organization/           built-in module, as configuration, installed with Axis: departments, employees, the IsDelegating rule, contracts, policies and contract scenarios
 samples/
   apps/purchase-requests/ the first sample application, as configuration only
   modules/                the sample modules departments and department-budgets, as configuration
