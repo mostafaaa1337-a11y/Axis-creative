@@ -273,7 +273,7 @@ public sealed class ExpressionTypeCheckerTests
         var parsed = ExpressionParser.Parse(text);
         Assert.True(parsed.Succeeded, parsed.Diagnostic?.Message);
 
-        var result = ExpressionTypeChecker.Check(parsed.Expression, _scope, Expected(type), policyFilter: true);
+        var result = ExpressionTypeChecker.Check(parsed.Expression, _scope, Expected(type), currentUser: true);
 
         Assert.True(result.Succeeded, result.Diagnostic?.Message);
         Assert.Equal(Expected(type), result.Type);
@@ -293,7 +293,7 @@ public sealed class ExpressionTypeCheckerTests
 
         Assert.NotNull(diagnostic);
         Assert.Equal((ExpressionDiagnosticCodes.CurrentUserOutsidePolicyFilter, offset), (diagnostic.Code, diagnostic.Offset));
-        Assert.Equal($"Function 'currentUser' is allowed only in a policy filter at character {offset + 1}.", diagnostic.Message);
+        Assert.Equal($"Function 'currentUser' is allowed only in a policy filter or a data source filter at character {offset + 1}.", diagnostic.Message);
     }
 
     [Theory]
@@ -353,7 +353,7 @@ public sealed class ExpressionTypeCheckerTests
         {
             ExpressionTypeChecker.Check(parsed.Expression, _scope, Expected(type)),
             ExpressionTypeChecker.Check(parsed.Expression, _scope, Expected(type), storedValue: true),
-            ExpressionTypeChecker.Check(parsed.Expression, _scope, Expected(type), policyFilter: true),
+            ExpressionTypeChecker.Check(parsed.Expression, _scope, Expected(type), currentUser: true),
         };
 
         foreach (var diagnostic in results.Select(result => result.Diagnostic))

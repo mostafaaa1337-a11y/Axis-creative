@@ -17,13 +17,13 @@ public sealed record ExpressionModel
 
     /// <summary>
     /// Parses <paramref name="expression"/> and checks it against <paramref name="expected"/> over
-    /// <paramref name="scope"/>. Only a policy filter can call <c>currentUser()</c>, and only a module
+    /// <paramref name="scope"/>. Only a policy filter and a data source's own filter, with <paramref name="currentUser"/>, can call <c>currentUser()</c>, and only a module
     /// contract's expression, with <paramref name="contract"/>, can call <c>previous</c>. Only a module contract's
     /// expression and the set of a step that writes a record, with <paramref name="stepSet"/>, can call
     /// <c>accountableUser()</c> or <c>decisionTask()</c>. The compiler
     /// reports every problem first, so a problem here throws <see cref="ArgumentException"/>.
     /// </summary>
-    public static ExpressionModel Compile(string expression, ExpressionScope scope, ExpressionType expected, bool policyFilter = false, bool contract = false, bool stepSet = false)
+    public static ExpressionModel Compile(string expression, ExpressionScope scope, ExpressionType expected, bool currentUser = false, bool contract = false, bool stepSet = false)
     {
         ArgumentNullException.ThrowIfNull(expression);
         ArgumentNullException.ThrowIfNull(scope);
@@ -35,7 +35,7 @@ public sealed record ExpressionModel
             throw new ArgumentException($"The expression does not parse: {parsed.Diagnostic.Message}", nameof(expression));
         }
 
-        var check = ExpressionTypeChecker.Check(parsed.Expression, scope, expected, policyFilter: policyFilter, contract: contract, stepSet: stepSet);
+        var check = ExpressionTypeChecker.Check(parsed.Expression, scope, expected, currentUser: currentUser, contract: contract, stepSet: stepSet);
         if (!check.Succeeded)
         {
             throw new ArgumentException($"The expression does not type-check: {check.Diagnostic.Message}", nameof(expression));

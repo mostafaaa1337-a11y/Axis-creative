@@ -290,7 +290,7 @@ internal static class ContractChecker
                 if (entry.Filter is { } filter)
                 {
                     scope ??= ExpressionScopes.ForDataSource(entity.Fields, [], findEntity, filterRules, modules, undeclaredModuleIsUnknown: true);
-                    if (ApplicationCompiler.CheckFilter(filter, scope, policyFilter: true, entity, findEntity, out _) is { } problem)
+                    if (ApplicationCompiler.CheckFilter(filter, scope, currentUser: true, entity, findEntity, out _) is { } problem)
                     {
                         report(problem.Code, problem.Message, $"{entryPath}/filter");
                     }

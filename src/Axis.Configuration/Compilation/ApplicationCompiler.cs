@@ -2504,10 +2504,10 @@ public static partial class ApplicationCompiler
                     modulesFor(dataSource),
                     undeclaredModuleIsUnknown: IsModuleResource(dataSource));
 
-                void CheckDataSourceFilter(string filter, string path)
+                void CheckDataSourceFilter(string filter, string path, bool currentUser)
                 {
                     var problem = CheckFilter(
-                        filter, filterScope, policyFilter: false, entity, findEntity, out var check, parameterNames: dataSource.Parameters.Select(p => p.Name).ToList());
+                        filter, filterScope, currentUser, entity, findEntity, out var check, parameterNames: dataSource.Parameters.Select(p => p.Name).ToList());
                     if (check is not null)
                     {
                         references.AddRuleCalls(dataSource, path, check);
@@ -2522,7 +2522,7 @@ public static partial class ApplicationCompiler
 
                 if (dataSource.Filter is { } filter)
                 {
-                    CheckDataSourceFilter(filter, "/filter");
+                    CheckDataSourceFilter(filter, "/filter", currentUser: true);
                 }
 
                 var measures = dataSource.Aggregate?.Measures ?? [];
@@ -2530,7 +2530,7 @@ public static partial class ApplicationCompiler
                 {
                     if (measures[index].Filter is { } measureFilter)
                     {
-                        CheckDataSourceFilter(measureFilter, $"/aggregate/measures/{index}/filter");
+                        CheckDataSourceFilter(measureFilter, $"/aggregate/measures/{index}/filter", currentUser: false);
                     }
                 }
             }
@@ -2667,7 +2667,7 @@ public static partial class ApplicationCompiler
     /// The first problem of a data source or policy filter: in parsing, in type checking over the
     /// entity's fields, its child collections, a data source's parameters, paths through reference
     /// fields and the named rules, or outside the SQL subset with each rule call inlined. Only a
-    /// policy filter can call <c>currentUser()</c>. A filter that calls a rule without a checked
+    /// policy filter and a data source's own filter, with <paramref name="currentUser"/>, can call <c>currentUser()</c>. A filter that calls a rule without a checked
     /// expression, directly or through the rules it calls, is not translated: that rule already has
     /// its own diagnostic, as for a validation. A filter that reads a sensitive field of
     /// <paramref name="entity"/>, or of an entity it reaches, is refused: the stored value is
@@ -2678,7 +2678,7 @@ public static partial class ApplicationCompiler
     internal static ExpressionDiagnostic? CheckFilter(
         string filter,
         ExpressionScope scope,
-        bool policyFilter,
+        bool currentUser,
         EntityResource entity,
         Func<string, EntityResource?> findEntity,
         out ExpressionCheckResult? check,
@@ -2691,7 +2691,7 @@ public static partial class ApplicationCompiler
             return parsed.Diagnostic;
         }
 
-        var typeCheck = ExpressionTypeChecker.Check(parsed.Expression, scope, ExpressionType.Boolean, policyFilter: policyFilter);
+        var typeCheck = ExpressionTypeChecker.Check(parsed.Expression, scope, ExpressionType.Boolean, currentUser: currentUser);
         if (!typeCheck.Succeeded)
         {
             return typeCheck.Diagnostic;
@@ -2870,7 +2870,7 @@ public static partial class ApplicationCompiler
                 [.. entry.Actions.Select(PolicyChecker.ParseAction)],
                 // A checked entry names only fields of the entity.
                 entry.Fields is null ? null : [.. entry.Fields.Select(name => FindField(entity, name)!.Name)],
-                entry.Filter is null ? null : ExpressionModel.Compile(entry.Filter, filterScope, ExpressionType.Boolean, policyFilter: true));
+                entry.Filter is null ? null : ExpressionModel.Compile(entry.Filter, filterScope, ExpressionType.Boolean, currentUser: true));
 
             var roles = (slotRoles ?? new Dictionary<string, string>()).Values.Distinct(StringComparer.Ordinal).ToList();
             return new CeilingModel
@@ -3324,7 +3324,7 @@ public static partial class ApplicationCompiler
             Entity = new EntityReference(entity.Id, entity.Name),
             Fields = fields,
             Parameters = parameters,
-            Filter = dataSource.Filter is { } filter ? ExpressionModel.Compile(filter, filterScope, ExpressionType.Boolean) : null,
+            Filter = dataSource.Filter is { } filter ? ExpressionModel.Compile(filter, filterScope, ExpressionType.Boolean, currentUser: true) : null,
             Aggregate = dataSource.Aggregate is { } aggregate
                 ? new DataSourceAggregateModel(
                     aggregate.GroupBy

@@ -316,9 +316,9 @@ Run and the Test results list, the read-only views of a module entity, a module 
       A process without a subject offers its `parameters` and no field.
     - The application's rules, with module rules as `<module>:<name>`, and the
       functions and aggregates of the [expression language](expressions.md#functions).
-    - `currentUser()` only in a policy grant's filter. Expressions in
-      migrations and endpoints, and in a trigger that has no entity, offer the
-      rules and the functions only.
+    - `currentUser()` only in a policy grant's or data source's filter, not a
+      measure filter. Expressions in migrations and endpoints, and in a trigger
+      that has no entity, offer the rules and the functions only.
     - A function or rule inserts with its brackets and puts the cursor inside
       them. `now()` and `currentUser()` put the cursor after them.
     - When the names do not load, the list offers the functions only. Typing and

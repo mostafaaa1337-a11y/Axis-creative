@@ -343,4 +343,5 @@ public static class DiagnosticCodes
     public const string DuplicateProcessElementName = "AXC0359";
     public const string DuplicateFormStepName = "AXC0360";
     public const string DuplicatePageElementName = "AXC0361";
+    public const string CurrentUserInScheduleDataSource = "AXC0362";
 }

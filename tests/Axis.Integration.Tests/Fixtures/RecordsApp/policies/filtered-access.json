@@ -12,6 +12,7 @@
     { "name": "activeItemsRead", "dataSource": "ActiveItems", "actions": ["read"] },
     { "name": "itemTotalsRead", "dataSource": "ItemTotals", "actions": ["read"] },
     { "name": "overdueTicketsRead", "dataSource": "OverdueTickets", "actions": ["read"] },
+    { "name": "myTicketsRead", "dataSource": "MyTickets", "actions": ["read"] },
     { "name": "itemsByDepartmentRead", "dataSource": "ItemsByDepartment", "actions": ["read"] }
   ]
 }

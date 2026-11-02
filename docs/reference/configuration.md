@@ -573,27 +573,27 @@ flowchart LR
      is unknown. Data change triggers fire on every committed write through the
      record command, see [Starts from triggers](process-events.md#starts-from-triggers).
 
-     A schedule trigger's `schedule` must be a valid 5-field cron, otherwise
-     it is `AXC0160` at `/schedule`. Its `timeZone` must be an IANA id,
-     written with its exact letter case, otherwise it is `AXC0161` at
-     `/timeZone`. Its `dataSource` must name a loaded data source, ignoring
-     letter case, otherwise it is `AXC0162` at `/dataSource`. A grouped data
-     source is `AXC0163` and a data source over another entity than the
-     process's subject entity is `AXC0164`, both at `/dataSource`. The
-     second is not checked when either entity is unknown. Each `parameters`
-     key must name a parameter of the data source, ignoring letter case, and
-     no parameter may be named twice, otherwise the key is `AXC0165` at
-     `/parameters/{key}`. A value that is not a literal of the parameter's
-     type is `AXC0166` at `/parameters/{key}`. Each parameter that no key
-     gives is `AXC0167` at `/parameters`, once for each parameter, even when
-     `parameters` is left out. The parameters are not checked when the data
-     source is unknown. A schedule trigger without a `dataSource` is a
-     scheduled job. Its process must have no subject, otherwise it is
-     `AXC0249` at `/process`, and the parameter checks then read the process's
-     parameters. A `null` is `AXC0166` there. They are not checked when the
-     process is unknown or has a subject. A name whose data source file was not loaded because
-     of its own errors is not reported again. The
-     [schedule trigger](integration-resources.md#events-and-triggers) section lists the rules.
+     A schedule trigger's `schedule` must be a valid 5-field cron, otherwise it is
+     `AXC0160` at `/schedule`. Its `timeZone` must be an IANA id, written with its
+     exact letter case, otherwise it is `AXC0161` at `/timeZone`. Its `dataSource`
+     must name a loaded data source, ignoring letter case, otherwise it is
+     `AXC0162` at `/dataSource`. A grouped data source is `AXC0163`, a data source
+     over another entity than the process's subject entity is `AXC0164` and one
+     whose `filter` calls `currentUser()` is `AXC0362`, all at `/dataSource`. The
+     entity match is not checked when either entity is unknown. Each `parameters`
+     key must name a parameter of the data source, ignoring letter case, and no
+     parameter may be named twice, otherwise the key is `AXC0165` at
+     `/parameters/{key}`. A value that is not a literal of the parameter's type is
+     `AXC0166` at `/parameters/{key}`. Each parameter that no key gives is
+     `AXC0167` at `/parameters`, once for each parameter, even when `parameters`
+     is left out. The parameters are not checked when the data source is unknown.
+     A schedule trigger without a `dataSource` is a scheduled job. Its process
+     must have no subject, otherwise it is `AXC0249` at `/process`, and the
+     parameter checks then read the process's parameters. A `null` is `AXC0166`
+     there. They are not checked when the process is unknown or has a subject. A
+     name whose data source file did not load is not reported again. The
+     [schedule trigger](integration-resources.md#events-and-triggers) section
+     lists the rules.
 
      A `type` other than `event`, `dataChange` or `schedule`, a `mode` other
      than `async` or `sync`, a `when` or `mode` on a schedule trigger, a

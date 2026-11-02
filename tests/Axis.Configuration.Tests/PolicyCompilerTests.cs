@@ -462,7 +462,6 @@ public sealed class PolicyCompilerTests
     public static TheoryData<string, string, string, string> CurrentUserOutsidePolicyFilters => new()
     {
         { "entities/request.json", Request("""[{ "name": "check1", "expression": "owner == currentUser()", "message": { "textKey": "request.invalid" }, "field": "owner" }]"""), "/validations/0/expression", "at character 10." },
-        { "data-sources/request-list.json", RequestList("owner == currentUser()"), "/filter", "at character 10." },
         { "processes/request-review.json", RequestReview("currentUser() != null"), "/startCondition/expression", "at character 1." },
         { "rules/is-owner.json", IsOwner("owner == currentUser()"), "/expression", "at character 10." },
     };
@@ -477,7 +476,37 @@ public sealed class PolicyCompilerTests
 
         var diagnostic = Assert.Single(result.Diagnostics);
         Assert.Equal((ExpressionDiagnosticCodes.CurrentUserOutsidePolicyFilter, file, path), (diagnostic.Code, diagnostic.File, diagnostic.Path));
-        Assert.Equal($"Function 'currentUser' is allowed only in a policy filter {position}", diagnostic.Message);
+        Assert.Equal($"Function 'currentUser' is allowed only in a policy filter or a data source filter {position}", diagnostic.Message);
+        Assert.Null(result.Model);
+    }
+
+    [Fact]
+    public void A_data_source_filter_can_call_current_user()
+    {
+        using var folder = Folder(Policy("""["employee"]""", """[{ "name": "requestReviewStart7", "process": "RequestReview", "actions": ["start"] }]"""))
+            .With("data-sources/request-list.json", RequestList("owner == currentUser()"));
+
+        var result = ApplicationCompiler.Compile(folder.Path);
+
+        Assert.Empty(result.Diagnostics);
+        Assert.NotNull(result.Model);
+    }
+
+    [Fact]
+    public void A_measure_filter_cannot_call_current_user()
+    {
+        using var folder = Folder(Policy("""["employee"]""", """[{ "name": "requestReviewStart7", "process": "RequestReview", "actions": ["start"] }]"""))
+            .With("data-sources/request-list.json", $$"""
+                { "id": "{{DataSourceId}}", "kind": "dataSource", "name": "RequestList", "formatVersion": 1, "entity": "Request",
+                  "fields": [{ "name": "owner", "path": "owner" }],
+                  "aggregate": { "groupBy": ["owner"], "measures": [{ "name": "mine", "function": "count", "filter": "owner == currentUser()" }] } }
+                """);
+
+        var result = ApplicationCompiler.Compile(folder.Path);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal((ExpressionDiagnosticCodes.CurrentUserOutsidePolicyFilter, "data-sources/request-list.json", "/aggregate/measures/0/filter"), (diagnostic.Code, diagnostic.File, diagnostic.Path));
+        Assert.Equal("Function 'currentUser' is allowed only in a policy filter or a data source filter at character 10.", diagnostic.Message);
         Assert.Null(result.Model);
     }
 
