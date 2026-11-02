@@ -4,5 +4,5 @@
   "name": "NewIntake",
   "formatVersion": 1,
   "title": { "textKey": "intake.pages.newIntake.title" },
-  "widgets": [{ "type": "form", "form": "IntakeForm" }]
+  "widgets": [{ "type": "form", "name": "intakeForm", "form": "IntakeForm" }]
 }
