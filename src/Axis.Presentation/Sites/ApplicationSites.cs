@@ -272,7 +272,7 @@ public static class ApplicationSites
                     entity.TryGetField(entry.Field, out var field);
                     return new FormFieldMetadata(
                         field!.Name,
-                        entry.ReadOnly || field.IsComputed || field.Sequence is not null || field.Creator,
+                        entry.ReadOnly || field.IsComputed || field.Sequence is not null || field.Creator || field.Match is not null,
                         entry.VisibleWhen is not null,
                         entry.Width);
                 })]))],

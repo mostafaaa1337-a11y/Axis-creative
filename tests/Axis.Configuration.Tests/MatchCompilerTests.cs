@@ -87,6 +87,26 @@ public sealed class MatchCompilerTests
         Assert.Null(result.Model);
     }
 
+    [Fact]
+    public void Process_cannot_set_a_matched_field()
+    {
+        using var folder = Folder(null)
+            .With("processes/review.json", """
+                { "id": "66666666-6666-4666-8666-666666666666", "kind": "process", "name": "Review", "formatVersion": 1, "entity": "Order", "start": "set",
+                  "steps": [
+                    { "name": "set", "type": "operation", "operation": "updateRecord", "set": { "other": "null" }, "next": "done" },
+                    { "name": "done", "type": "end" }
+                  ] }
+                """);
+
+        var result = ApplicationCompiler.Compile(folder.Path);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal((DiagnosticCodes.ReadOnlySetField, "/steps/0/set/other"), (diagnostic.Code, diagnostic.Path));
+        Assert.Contains("is set by its match", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Null(result.Model);
+    }
+
     /// <summary>
     /// An Employee entity with <c>fullName</c>, a unique text <c>user</c>, a text <c>nickname</c> and
     /// a unique integer <c>code</c>. An Order entity with <c>title</c> and a <c>lines</c> child
