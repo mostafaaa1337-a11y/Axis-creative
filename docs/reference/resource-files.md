@@ -596,9 +596,10 @@ new check is a new compile diagnostic.
 
 ### Matched references
 
-_(planned for M26)_ A `reference` field may have `match`, which finds its record by a unique field
-instead of being written, as
-[D124](../decisions/d124-the-organization-and-approvals-modules.md) agrees:
+A `reference` field may have `match`, which finds its record by a unique field instead of being
+written, as [D124](../decisions/d124-the-organization-and-approvals-modules.md) agrees. The compile
+checks of `match` are built and compile into the field's model. The write below is
+_(planned for M26)_:
 
 ```json
 {
@@ -609,9 +610,12 @@ instead of being written, as
 }
 ```
 
-- **Shape.** `match.field` names a `unique` field of the target entity. `match.from` names a field
-  of this entity with the same type. Neither may be `sensitive`, unless the target field has
-  `exactLookup`. A bad name or type is a diagnostic at `/fields/{i}/match`.
+- **Shape.** `match` has exactly the keys `field` and `from`, or it breaks the JSON Schema
+  (`AXC0004`). `match.field` names a `unique` field of the target entity. A unique field cannot be
+  `sensitive`. `match.from` names a field of this entity with the same field type, and for two
+  `reference` fields the same target entity. It may not be `sensitive`, the field itself, another
+  field with `match`, or a computed field, because the match runs before computed fields and a
+  chain of matched fields has no order. A problem is `AXC0362` at `/fields/{i}/match`.
 - **Value.** On every create and update, after defaults and creator fields and before computed
   fields and validations, the write sets the field to the target record whose `field` equals the
   value of `from`, or to `null` when `from` is empty or no record matches. The lookup reads as the
@@ -619,8 +623,9 @@ instead of being written, as
   until this record is written again.
 - **Not writable.** Clients, process `set`, imports and seeds cannot write it. A value for it is a
   `400` at its pointer with "Cannot be set.", as for a creator field.
-- **Allowed fields.** `match` cannot be combined with `required`, `expression`, `default` or
-  `sequence`, and a child entity's field cannot have it.
+- **Allowed fields.** Only a `reference` field may have `match`. It cannot be combined with
+  `required`, `expression`, `default` or `sequence`, and a child entity's field cannot have it.
+  Each is `AXC0013` at `/fields/{i}/match`, and only the first problem found is reported.
 
 ### Indexes
 
@@ -875,26 +880,3 @@ The `application` manifest may name the application's time zone, see [D75](../de
 - **What does not.** `now()` stays an instant. A schedule trigger keeps its own
   `timeZone`. The SPA shows a `date-time` in the browser's time zone, as
   before. Calendar durations such as `P1M` stay `AXC0084`.
-
-## File storage
-
-The `application` manifest may name the deployment binding that says where the bytes of its files go, see
-[D76](../decisions/d76-file-money-and-enum-label-field-types.md):
-
-```json
-{
-  "id": "6ec71db1-5b21-43d9-95d2-dcc45055eb0e",
-  "kind": "application",
-  "name": "ServiceDesk",
-  "formatVersion": 1,
-  "fileStorage": { "binding": "Files" }
-}
-```
-
-- `fileStorage` is optional. It is an object with one `binding`, a binding name. Any other shape is a schema error.
-  Without it, the bytes go to the tenant database and activation needs no binding.
-- The binding must be a `storage` binding of the tenant. Activation reports a missing binding, or one of another
-  kind, as `AXC0100` at `/fileStorage/binding` of `application.json`. On a preview tenant a missing binding is a
-  warning.
-- In M15 the binding's only value is `database`, so the bytes stay in `axis.file_contents`. See
-  [deployment bindings](integration-resources.md#deployment-bindings).

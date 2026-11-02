@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Axis.Configuration.Compilation;
+using Axis.Configuration.Diagnostics;
 using Axis.Configuration.Modules;
 using Axis.Expressions.Evaluation;
 using Axis.Expressions.Parsing;
@@ -54,6 +55,25 @@ public sealed class OrganizationModuleTests
         Assert.DoesNotContain(employee.Fields, field => field.Name is "birthDate" or "dateOfBirth" or "identityNumber" or "address");
         var department = Assert.Single(compiled.Model.Entities, entity => entity.Name.EndsWith("Department", StringComparison.Ordinal));
         Assert.True(Field(department, "code").Unique);
+    }
+
+    [Fact]
+    public void A_policy_that_grants_the_member_role_a_wider_update_than_the_ceiling_is_axc0334()
+    {
+        using var folder = Application().With("policies/employee-update.json", """
+            { "id": "44444444-4444-4444-8444-444444444421", "kind": "policy", "name": "EmployeeUpdate", "formatVersion": 1,
+              "roles": ["employee"],
+              "grants": [{ "name": "employeeUpdate", "entity": "organization/Employee", "actions": ["update"] }] }
+            """);
+
+        var compiled = ApplicationCompiler.Compile(folder.Path, null, ModuleCatalog.Load(_modulesPath).Modules);
+
+        var diagnostic = Assert.Single(compiled.Diagnostics);
+        Assert.Equal(DiagnosticCodes.GrantPastCeiling, diagnostic.Code);
+        Assert.Contains("'employee'", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("'update'", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("'member'", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Null(compiled.Model);
     }
 
     [Theory]

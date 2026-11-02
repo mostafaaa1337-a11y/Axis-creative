@@ -1174,6 +1174,7 @@ public static partial class ApplicationCompiler
             CheckCreator(field, path, childOwner, Report);
             CheckSearchable(field, path, Report);
             CheckSensitiveFlags(entity, field, path, Report);
+            CheckMatch(entity, field, path, childOwner, findEntity, moduleReferences, Report);
             CheckMoney(entity, field, path, Report);
             CheckDefault(entity, field, path, defaultScope, references, Report);
 
@@ -1540,6 +1541,103 @@ public static partial class ApplicationCompiler
         if (field.Searchable == true)
         {
             report(DiagnosticCodes.SensitiveFieldUse, SensitiveUseMessage(entity.Name, field.Name, "'searchable'"), $"{path}/searchable");
+        }
+    }
+
+    /// <summary>
+    /// Checks a field's <c>match</c>. It applies only to reference fields that are optional, neither
+    /// computed, defaulted nor numbered, and not on a child entity: only the first of those problems
+    /// is reported, as <c>AXC0013</c>. Then <c>match.from</c> must be a stored, non-sensitive field of
+    /// this entity other than the field itself or another matched field, <c>match.field</c> a unique
+    /// field of the target, and the two of the same type, each reported as <c>AXC0362</c>.
+    /// </summary>
+    private static void CheckMatch(
+        EntityResource entity,
+        FieldDefinition field,
+        string path,
+        ChildOwner? childOwner,
+        Func<string, EntityResource?> findEntity,
+        ModuleReferences moduleReferences,
+        Action<string, string, string> report)
+    {
+        if (field.Match is not { } match)
+        {
+            return;
+        }
+
+        var matchPath = $"{path}/match";
+        var problem = FieldTypes.Parse(field.Type) != FieldType.Reference ? $"'match' applies only to reference fields, not to {field.Type} fields."
+            : field.Required == true ? "A field with a 'match' cannot be required: the server sets it to null when no record matches."
+            : field.Expression is not null ? "A field with a 'match' cannot have an 'expression': the server sets it from the matched record."
+            : field.Default is not null ? "A field with a 'match' cannot have a 'default': the server sets it from the matched record."
+            : field.Sequence is not null ? "A field with a 'match' cannot have a 'sequence': the server sets it from the matched record."
+            : childOwner is not null ? $"A field with a 'match' cannot belong to a child entity, but this entity is owned by '{childOwner}'."
+            : null;
+        if (problem is not null)
+        {
+            report(DiagnosticCodes.InvalidConstraint, problem, matchPath);
+            if (FieldTypes.Parse(field.Type) != FieldType.Reference)
+            {
+                return;
+            }
+        }
+
+        var from = FindField(entity, match.From);
+        var fromProblem = from is null ? $"The match 'from' field '{match.From}' is not a field of '{entity.Name}'."
+            : ReferenceEquals(from, field) ? $"The match 'from' field '{match.From}' is the field itself."
+            : from.Match is not null ? $"The match 'from' field '{from.Name}' has a 'match' of its own, so there is no order to match them in."
+            : from.Expression is not null ? $"The match 'from' field '{from.Name}' is computed, and the match runs before computed fields."
+            : from.Sensitive == true ? $"The match 'from' field '{from.Name}' is sensitive, so its value cannot be looked up."
+            : null;
+        if (fromProblem is not null)
+        {
+            report(DiagnosticCodes.InvalidMatch, fromProblem, matchPath);
+        }
+
+        // An unknown target is already reported.
+        var targetEntity = field.Target is { } targetName ? moduleReferences.Find(targetName, findEntity) : null;
+        if (targetEntity is null)
+        {
+            return;
+        }
+
+        var targetField = FindField(targetEntity, match.Field);
+        if (targetField is null)
+        {
+            report(
+                DiagnosticCodes.InvalidMatch,
+                $"The match field '{match.Field}' is not a field of '{targetEntity.Name}'.",
+                matchPath);
+        }
+        else if (targetField.Unique != true)
+        {
+            report(
+                DiagnosticCodes.InvalidMatch,
+                $"The match field '{targetField.Name}' of '{targetEntity.Name}' is not unique. A matched field must be unique.",
+                matchPath);
+        }
+
+        if (from is null || targetField is null)
+        {
+            return;
+        }
+
+        var fromType = FieldTypes.Parse(from.Type);
+        if (fromType != FieldTypes.Parse(targetField.Type))
+        {
+            report(
+                DiagnosticCodes.InvalidMatch,
+                $"The match 'from' field '{from.Name}' is {from.Type}, but the match field '{targetField.Name}' is {targetField.Type}. They must have the same type.",
+                matchPath);
+        }
+        else if (fromType == FieldType.Reference
+            && from.Target is { } fromTarget && targetField.Target is { } matchTarget
+            && !ReferenceEquals(moduleReferences.Find(fromTarget, findEntity), moduleReferences.Find(matchTarget, findEntity)))
+        {
+            report(
+                DiagnosticCodes.InvalidMatch,
+                $"The match 'from' field '{from.Name}' refers to '{fromTarget}', but the match field '{targetField.Name}' refers to '{matchTarget}'. They must refer to the same entity.",
+                matchPath);
         }
     }
 
@@ -2903,6 +3001,14 @@ public static partial class ApplicationCompiler
                 ]);
         }
 
+        // A core validation also reads id, the record's own id, which a lifecycle guard does not.
+        var validationScope = ExpressionScopes.ForEntity(
+            entity.Fields,
+            rules: rules,
+            findEntity: entitiesByName.GetValueOrDefault,
+            modules: modules,
+            undeclaredModuleIsUnknown: true,
+            idEntity: entity.Name);
         return new()
         {
             Name = contract.Name,
@@ -2924,7 +3030,7 @@ public static partial class ApplicationCompiler
                 },
             Validations = [.. (contract.Validations ?? []).Select(validation => new CoreValidationModel(
                 validation.Name,
-                ExpressionModel.Compile(validation.Expression, scope, ExpressionType.Boolean, contract: true),
+                ExpressionModel.Compile(validation.Expression, validationScope, ExpressionType.Boolean, contract: true),
                 validation.Message,
                 FindField(entity, validation.Field)!.Name))],
             Effects = [.. (contract.Effects ?? []).Select(BuildEffect)],
@@ -2976,6 +3082,9 @@ public static partial class ApplicationCompiler
                 : ExpressionModel.Compile(field.Default, defaultScope, ExpressionScopes.TypeOf(field)!),
             Sensitive = field.Sensitive == true,
             ExactLookup = field.ExactLookup == true,
+            Match = field.Match is { } match
+                ? new FieldMatchModel(FindField(target!, match.Field)!.Name, FindField(entity, match.From)!.Name)
+                : null,
         };
     }
 

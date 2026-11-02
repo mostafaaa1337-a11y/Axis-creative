@@ -74,4 +74,7 @@ public sealed record FieldDefinition
 
     /// <summary>Whether a sensitive field keeps a lookup hash beside its encrypted value, or null when not declared.</summary>
     public bool? ExactLookup { get; init; }
+
+    /// <summary>How a reference field finds its record by a unique field of the target, or null when not declared.</summary>
+    public FieldMatchDefinition? Match { get; init; }
 }

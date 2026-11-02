@@ -103,7 +103,7 @@ reconciles is in [Connector calls](process-execution.md#connector-calls).
   activation needs no binding. Activating a release whose `fileStorage`
   binding is missing, or has another kind, fails with `AXC0100`. Other storage
   comes later. Under `Tenancy:Source=directory`, the `fileStorage` binding is a
-  `storage` binding of the tenant directory, and its value is `database`. See [the application manifest](resource-files.md#file-storage),
+  `storage` binding of the tenant directory, and its value is `database`. See [the application manifest](file-fields.md#the-filestorage-manifest-property),
   [file fields](file-fields.md#storage-and-clean-up) and
   [D76](../decisions/d76-file-money-and-enum-label-field-types.md).
 - **HTTPS.** A `url` binding may use `http` only in Development. Elsewhere it
