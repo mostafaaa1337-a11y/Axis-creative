@@ -27,19 +27,27 @@ internal sealed record LayerMergeResult(
 /// Applies a <c>layer</c>'s <c>changes</c> to a module resource. Objects merge property by property. A list
 /// that <see cref="ListKeys"/> keys merges element by element: an element with a key the module's list has
 /// changes that element, one without it is added at the end, and one with <c>"remove": true</c> is dropped.
+/// In a list where order counts, an added or changed element with <c>after</c> or <c>before</c> then moves
+/// right behind or in front of the element that names, one placement at a time in the layer's order, and the
+/// merged resource does not hold <c>after</c> or <c>before</c>.
 /// Every other value, value lists and lists still pending included, is replaced whole. The root
 /// <c>id</c>, <c>kind</c>, <c>name</c> and <c>formatVersion</c>, and the key of an element, never change.
 /// </summary>
 internal static class LayerMerger
 {
     private const string RemoveProperty = "remove";
+    private const string AfterProperty = "after";
+    private const string BeforeProperty = "before";
+
+    private static readonly string[] _placementProperties = [AfterProperty, BeforeProperty];
 
     private static readonly string[] _identityProperties = ["id", "kind", "name", "formatVersion"];
 
     /// <summary>
     /// Merges the changes of <paramref name="layer"/> into <paramref name="module"/>, a resource of
     /// <paramref name="kind"/>. A remove of an unknown key and a remove that holds more than its key are
-    /// added to <paramref name="diagnostics"/>, and the merge goes on without them.
+    /// added to <paramref name="diagnostics"/>, and the merge goes on without them. So are a placement with both
+    /// <c>after</c> and <c>before</c> and one whose anchor names no element of the merged list.
     /// </summary>
     public static LayerMergeResult Merge(string kind, JsonElement module, LayerResource layer, List<Diagnostic> diagnostics)
     {
@@ -111,7 +119,7 @@ internal static class LayerMerger
                     && listKey.Mode == ListKeyMode.Keyed)
                 {
                     changed[propertyMergedPath] = propertyLayerPath;
-                    target[property.Name] = MergeList(currentList, property.Value, listKey.Key!, propertyMergedPath, propertyLayerPath);
+                    target[property.Name] = MergeList(currentList, property.Value, listKey, propertyMergedPath, propertyLayerPath);
                 }
                 else
                 {
@@ -121,8 +129,10 @@ internal static class LayerMerger
             }
         }
 
-        private JsonArray MergeList(JsonArray module, JsonElement change, string keyProperty, string mergedPath, string layerPath)
+        private JsonArray MergeList(JsonArray module, JsonElement change, ListKey listKey, string mergedPath, string layerPath)
         {
+            var keyProperty = listKey.Key!;
+            var placements = new List<Placement>();
             var entries = module
                 .Select(node => new Entry(KeyOf(node, keyProperty), node?.DeepClone()))
                 .ToList();
@@ -143,16 +153,32 @@ internal static class LayerMerger
                         entries.RemoveAt(position);
                     }
                 }
-                else if (position >= 0)
-                {
-                    entries[position].Pieces.Add((element, index));
-                }
                 else
                 {
-                    entries.Add(new Entry(key, null) { Pieces = { (element, index) } });
+                    Entry entry;
+                    if (position >= 0)
+                    {
+                        entry = entries[position];
+                        entry.Pieces.Add((element, index));
+                    }
+                    else
+                    {
+                        entry = new Entry(key, null) { Pieces = { (element, index) } };
+                        entries.Add(entry);
+                    }
+
+                    if (listKey.Ordered && ReadPlacement(element, entry, elementLayerPath) is { } placement)
+                    {
+                        placements.Add(placement);
+                    }
                 }
 
                 index++;
+            }
+
+            foreach (var placement in placements)
+            {
+                Place(entries, placement);
             }
 
             var result = new JsonArray();
@@ -167,11 +193,19 @@ internal static class LayerMerger
                     if (node is null)
                     {
                         node = Replace(piece, elementMergedPath, pieceLayerPath);
+                        if (listKey.Ordered && node is JsonObject added)
+                        {
+                            foreach (var name in _placementProperties)
+                            {
+                                added.Remove(name);
+                                map.Remove($"{elementMergedPath}/{name}");
+                            }
+                        }
                     }
                     else if (node is JsonObject nodeObject && piece.ValueKind == JsonValueKind.Object)
                     {
                         changed[elementMergedPath] = pieceLayerPath;
-                        MergeObject(nodeObject, piece, elementMergedPath, pieceLayerPath, [keyProperty]);
+                        MergeObject(nodeObject, piece, elementMergedPath, pieceLayerPath, listKey.Ordered ? [keyProperty, AfterProperty, BeforeProperty] : [keyProperty]);
                     }
                     else if (!(node is JsonValue && piece.ValueKind == JsonValueKind.String && entry.Key is not null))
                     {
@@ -183,6 +217,65 @@ internal static class LayerMerger
             }
 
             return result;
+        }
+
+        /// <summary>Reads the <c>after</c> or <c>before</c> of an element, or reports an element that has both.</summary>
+        private Placement? ReadPlacement(JsonElement element, Entry entry, string elementLayerPath)
+        {
+            if (element.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            var hasAfter = element.TryGetProperty(AfterProperty, out var after);
+            var hasBefore = element.TryGetProperty(BeforeProperty, out var before);
+            if (hasAfter && hasBefore)
+            {
+                diagnostics.Add(new Diagnostic(
+                    DiagnosticCodes.LayerAfterAndBefore,
+                    "An element places itself with either \"after\" or \"before\", never both.",
+                    layer.File,
+                    elementLayerPath,
+                    layer.Id));
+                return null;
+            }
+
+            return hasAfter || hasBefore
+                ? new Placement(entry, hasAfter ? after : before, hasAfter, elementLayerPath)
+                : null;
+        }
+
+        /// <summary>Moves the entry of a placement behind or in front of its anchor, or reports an anchor that names no other element.</summary>
+        private void Place(List<Entry> entries, Placement placement)
+        {
+            var current = entries.IndexOf(placement.Entry);
+            if (current < 0)
+            {
+                return;
+            }
+
+            var anchorKey = placement.Anchor.ValueKind == JsonValueKind.String ? placement.Anchor.GetString() : null;
+            var anchor = anchorKey is null
+                ? -1
+                : entries.FindIndex(entry => entry != placement.Entry && string.Equals(entry.Key, anchorKey, StringComparison.OrdinalIgnoreCase));
+            if (anchor < 0)
+            {
+                diagnostics.Add(new Diagnostic(
+                    DiagnosticCodes.UnknownLayerAnchor,
+                    $"The merged list has no other element with the key '{(anchorKey ?? placement.Anchor.ToString())}' to place the element {(placement.IsAfter ? "after" : "before")}.",
+                    layer.File,
+                    placement.LayerPath,
+                    layer.Id));
+                return;
+            }
+
+            entries.RemoveAt(current);
+            if (current < anchor)
+            {
+                anchor--;
+            }
+
+            entries.Insert(placement.IsAfter ? anchor + 1 : anchor, placement.Entry);
         }
 
         private void CheckRemove(JsonElement element, string? key, string keyProperty, int position, string elementLayerPath)
@@ -248,6 +341,8 @@ internal static class LayerMerger
                     break;
             }
         }
+
+        private sealed record Placement(Entry Entry, JsonElement Anchor, bool IsAfter, string LayerPath);
 
         private sealed class Entry(string? key, JsonNode? node)
         {

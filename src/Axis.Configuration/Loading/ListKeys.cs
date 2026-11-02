@@ -16,8 +16,11 @@ internal enum ListKeyMode
     Pending,
 }
 
-/// <summary>The key of a list. <see cref="Key"/> is set only for a keyed list.</summary>
-internal readonly record struct ListKey(ListKeyMode Mode, string? Key);
+/// <summary>
+/// The key of a list. <see cref="Key"/> is set only for a keyed list. <see cref="Ordered"/> is set for a keyed
+/// list where order counts, so a layer can place an element in it with <c>after</c> or <c>before</c>.
+/// </summary>
+internal readonly record struct ListKey(ListKeyMode Mode, string? Key, bool Ordered = false);
 
 /// <summary>
 /// The key of every object list that a customization layer can change, by resource kind and the name of the
@@ -27,6 +30,8 @@ internal static class ListKeys
 {
     private static readonly ListKey _name = new(ListKeyMode.Keyed, "name");
     private static readonly ListKey _field = new(ListKeyMode.Keyed, "field");
+    private static readonly ListKey _orderedName = new(ListKeyMode.Keyed, "name", true);
+    private static readonly ListKey _orderedField = new(ListKeyMode.Keyed, "field", true);
     private static readonly ListKey _id = new(ListKeyMode.Keyed, "id");
     private static readonly ListKey _value = new(ListKeyMode.Value, null);
     private static readonly ListKey _pending = new(ListKeyMode.Pending, null);
@@ -34,27 +39,28 @@ internal static class ListKeys
     private static readonly FrozenDictionary<(string Kind, string Property), ListKey> _keys =
         new Dictionary<(string Kind, string Property), ListKey>
         {
-            [(ResourceKinds.Entity, "fields")] = _name,
+            [(ResourceKinds.Entity, "fields")] = _orderedName,
             [(ResourceKinds.Entity, "validations")] = _name,
             [(ResourceKinds.Entity, "indexes")] = _name,
-            [(ResourceKinds.Process, "steps")] = _name,
+            [(ResourceKinds.Process, "steps")] = _orderedName,
             [(ResourceKinds.Process, "outcomes")] = _name,
             [(ResourceKinds.Process, "branches")] = _name,
             [(ResourceKinds.Process, "escalations")] = _name,
             [(ResourceKinds.Process, "parameters")] = _value,
             [(ResourceKinds.Process, "to")] = _value,
             [(ResourceKinds.Policy, "grants")] = _name,
-            [(ResourceKinds.Page, "widgets")] = _name,
-            [(ResourceKinds.Page, "actions")] = _name,
-            [(ResourceKinds.Page, "rowActions")] = _name,
-            [(ResourceKinds.Page, "toolbarActions")] = _name,
-            [(ResourceKinds.Page, "columns")] = _name,
-            [(ResourceKinds.Page, "tabs")] = _name,
+            [(ResourceKinds.Page, "widgets")] = _orderedName,
+            [(ResourceKinds.Page, "actions")] = _orderedName,
+            [(ResourceKinds.Page, "rowActions")] = _orderedName,
+            [(ResourceKinds.Page, "toolbarActions")] = _orderedName,
+            [(ResourceKinds.Page, "columns")] = _orderedName,
+            [(ResourceKinds.Page, "tabs")] = _orderedName,
             [(ResourceKinds.Page, "parameters")] = _value,
             [(ResourceKinds.Page, "measures")] = _value,
+            // Sections become ordered when they are keyed.
             [(ResourceKinds.Form, "sections")] = _pending,
-            [(ResourceKinds.Form, "steps")] = _name,
-            [(ResourceKinds.Form, "fields")] = _field,
+            [(ResourceKinds.Form, "steps")] = _orderedName,
+            [(ResourceKinds.Form, "fields")] = _orderedField,
             [(ResourceKinds.DataSource, "fields")] = _name,
             [(ResourceKinds.DataSource, "parameters")] = _name,
             [(ResourceKinds.DataSource, "groupBy")] = _field,

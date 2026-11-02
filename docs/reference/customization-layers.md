@@ -8,9 +8,9 @@ the idea, and [D122](../decisions/d122-how-a-customization-layer-is-written-and-
 the shapes below. The layer resource and the checks of [the layer resource](#the-layer-resource)
 and [applying a layer](#applying-a-layer) are built: compilation merges the `changes` of a layer
 into its module resource before any check, and the release stores the layer and the module's own
-files side by side, and a diagnostic about a part that a layer changed is reported in the layer file.
-Ordering with `after` and `before`, removing a whole resource and a layer on a `contract` are still
-_(planned for M25)_, as are Studio's support for layers and the sections below that are not about
+files side by side, a layer places an element with `after` and `before`, and a diagnostic about a part
+that a layer changed is reported in the layer file. Removing a whole resource and a layer on a `contract`
+are still _(planned for M25)_, as are Studio's support for layers and the sections below that are not about
 applying. Module upgrades, the three-way merge and eject are _(planned for M29)_.
 
 The conventions of [architecture.md](../architecture.md) apply. Diagnostic codes come with the
@@ -106,11 +106,17 @@ Compilation applies each layer to the resource of the pinned module version, bef
 - **Value lists**, such as a grant's `actions`, a notification's `to` or an index's `fields`, are
   one value. A layer that gives one replaces the whole list.
 - **Expressions** are one value. A layer that changes one replaces the whole expression.
-- **Order** _(planned for M25)_. An added element goes to the end of its list, unless it has `"after": "<key>"` or
-  `"before": "<key>"`, never both. A changed element with `after` or `before` moves there. The key
-  names an element of the merged list. Order counts in fields, form sections and fields, widgets,
-  columns, tabs, actions and steps of a wizard. In a process the steps are a graph, so their order
-  only sets how Studio lists them.
+- **Order.** An added element goes to the end of its list, unless it has `"after": "<key>"` or
+  `"before": "<key>"`, never both. A changed element with `after` or `before` moves there and keeps its
+  other changes. The key, the anchor, names another element of the same list after the merge, so it
+  can be a module element or one that the layer adds. Placements apply one at a time, in the order
+  the elements appear in the layer, after all adds and removes, so an author who chains placements
+  writes them in the order they should apply. Order counts in an entity's fields, a form's wizard
+  steps and fields, a page's widgets, actions, row actions, toolbar actions, columns and tabs, and a
+  process's steps, where the order only sets how Studio lists them, because the steps are a graph.
+  Form sections join when they are keyed. Any other list takes no `after` or `before`: an escalation's
+  `after` is its duration, and elsewhere the property is an unknown property. The merged resource
+  never holds `after` or `before`.
 - **Removing a whole resource** _(planned for M25)_. A layer whose `changes` is `{ "remove": true }` removes the
   resource from the application. A reference to it is then a diagnostic.
 - **Then the checks.** The merged resource is checked as any resource of its kind: its schema, its
@@ -135,10 +141,11 @@ Compilation applies each layer to the resource of the pinned module version, bef
 - **Checks of the layer itself.** A key in `changes` that the module's resource does not have, as a
   change, a remove or an anchor of `after` or `before`, is a diagnostic. So is a property that the
   kind does not have. A layer never matches by position. The checks are `AXC0364` for an unknown key
-  in a remove, `AXC0365` for a remove that holds more than its key and `AXC0366` for an unknown
-  property, each reported at its path under `/changes` in the layer file. A layer with one of them is
-  not applied. An element whose key the module's list lacks is an added element until `after` and
-  `before` exist, so only a remove can name an unknown key.
+  in a remove, `AXC0365` for a remove that holds more than its key, `AXC0366` for an unknown
+  property, `AXC0367` for an element with both `after` and `before` and `AXC0368` for an anchor that
+  names no other element of the merged list, each reported at its path under `/changes` in the layer
+  file. A layer with one of them is not applied. An element whose key the module's list lacks is an
+  added element, so only a remove or an anchor can name an unknown key.
 
 ## List keys
 
