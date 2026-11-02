@@ -15,7 +15,7 @@ namespace Axis.Expressions.Typing;
 /// reference fields resolves only in a scope that resolves paths, and is an unknown name in any
 /// other scope. The text of a <c>date</c> or <c>dateTime</c> literal must be a valid date or
 /// date-time under <see cref="DateLiterals"/>. A stored value, such as a computed field, cannot call
-/// <c>now()</c>, <c>today()</c> or <c>toDate</c>, because the value would go stale. Only a policy filter can call <c>currentUser()</c>,
+/// <c>now()</c>, <c>today()</c> or <c>toDate</c>, because the value would go stale. Only a policy filter and a data source's own filter can call <c>currentUser()</c>,
 /// including as a rule argument there, because no other expression runs for a signed-in user. A
 /// rule body is checked on its own, so it cannot call it. Only a module contract's expression can call
 /// <c>previous</c>, and its argument must be a bare name of one of the entity's own fields. Only the set
@@ -31,7 +31,7 @@ public static class ExpressionTypeChecker
     public const string OuterName = "outer";
 
     public static ExpressionCheckResult Check(
-        ExpressionNode expression, ExpressionScope scope, ExpressionType expected, bool storedValue = false, bool policyFilter = false, bool contract = false, bool stepSet = false)
+        ExpressionNode expression, ExpressionScope scope, ExpressionType expected, bool storedValue = false, bool currentUser = false, bool contract = false, bool stepSet = false)
     {
         ArgumentNullException.ThrowIfNull(expression);
         ArgumentNullException.ThrowIfNull(scope);
@@ -47,7 +47,7 @@ public static class ExpressionTypeChecker
                 new HashSet<MemberNode>(ReferenceEqualityComparer.Instance),
                 new HashSet<MemberNode>(ReferenceEqualityComparer.Instance),
                 storedValue,
-                policyFilter,
+                currentUser,
                 contract,
                 stepSet);
             var actual = Infer(expression, context);
@@ -338,11 +338,11 @@ public static class ExpressionTypeChecker
                     : ExpressionType.Date;
 
             case "currentUser":
-                return context.PolicyFilter
+                return context.CurrentUser
                     ? ExpressionType.Text
                     : throw Fail(
                         ExpressionDiagnosticCodes.CurrentUserOutsidePolicyFilter,
-                        "Function 'currentUser' is allowed only in a policy filter",
+                        "Function 'currentUser' is allowed only in a policy filter or a data source filter",
                         call.Offset);
 
             case "accountableUser" or "decisionTask":
@@ -827,7 +827,7 @@ public static class ExpressionTypeChecker
         HashSet<MemberNode> CollectionPaths,
         HashSet<MemberNode> OuterReads,
         bool StoredValue,
-        bool PolicyFilter,
+        bool CurrentUser,
         bool Contract,
         bool StepSet,
         bool InAggregateItem = false,

@@ -142,7 +142,7 @@ public sealed class SqlTranslatorTests
     {
         var parsed = ExpressionParser.Parse("t == currentUser() or t == 'x'");
         Assert.True(parsed.Succeeded, parsed.Diagnostic?.Message);
-        var check = ExpressionTypeChecker.Check(parsed.Expression, _scope, ExpressionType.Boolean, policyFilter: true);
+        var check = ExpressionTypeChecker.Check(parsed.Expression, _scope, ExpressionType.Boolean, currentUser: true);
         Assert.True(check.Succeeded, check.Diagnostic?.Message);
 
         var result = SqlTranslator.Translate(parsed.Expression, Column, check);

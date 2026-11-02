@@ -283,7 +283,7 @@ Compile checks, each a compile error:
   outside the [SQL subset](expressions.md#sql-subset), such as an aggregate
   other than `any` and `count`, or `lower`, is `AXC0053`. It gets the other
   [expression diagnostics](expressions.md#diagnostics) too.
-- `currentUser()` anywhere but a policy filter is `AXC0095`.
+- `currentUser()` anywhere but a policy filter and a data source `filter` is `AXC0095`.
 
 The schema checks the shape of each property: `roles` and `grants` are
 non-empty lists, each action is one of `read`, `create`, `update`, `delete`,

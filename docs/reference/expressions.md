@@ -7,8 +7,8 @@ diagnostics and the length, depth and node limits are built in
 bare field names, every operator, every [function](#functions) and the
 [aggregates](#aggregates), and the translation of the [SQL subset](#sql-subset).
 The one exception is [`currentUser()`](#current-user): the type checker and the
-SQL translation take it, and the record API binds its `@currentUser`
-parameter, but the interpreter does not evaluate it. Sections
+SQL translation take it, and the record API and the data source endpoint bind
+its `@currentUser` parameter, but the interpreter does not evaluate it. Sections
 marked *(planned for Mx)* are not built yet. Entity
 [validations](resource-files.md#entity-logic) and
 [computed fields](resource-files.md#entity-logic) are resource file uses: the
@@ -431,7 +431,7 @@ argument is `null`.
 | `now()` | date-time | The start time of the current transaction. Not allowed in a computed field (`AXC0086`). | Yes |
 | `today()` | date | The calendar date of the transaction's time in the application's time zone. Not allowed in a computed field (`AXC0086`). | Yes |
 | `toDate(date-time)` | date | The calendar date of an instant in the application's time zone. `null` gives `null`. Not allowed in a computed field (`AXC0086`). | Yes |
-| `currentUser()` | text | The signed-in user's id. Allowed only in a policy filter (`AXC0095`). See [Current user](#current-user). | Yes |
+| `currentUser()` | text | The signed-in user's id. Allowed only in a policy filter and in a data source `filter` (`AXC0095`). See [Current user](#current-user). | Yes |
 | `previous(field)` | type of the field | The field's value before the write, `null` on a create. Allowed only in a module contract (`AXC0336`), and its argument must be an own field (`AXC0337`). See [previous values](module-contracts.md#previous-values). | No |
 | `accountableUser()` | text | The user who answers for the write, or `null`. Allowed only in a module contract's guard, core validation and effect value and in the `set` of an `updateRecord` or `createRecord` step (`AXC0341`). See [the accountable user](module-contracts.md#the-accountable-user). | No |
 | `decisionTask()` | text | The id of the task whose completion the write follows, as a lowercase GUID with hyphens, or `null`. Allowed where `accountableUser()` is (`AXC0341`). See [the deciding task](module-contracts.md#the-deciding-task). | No |
@@ -476,21 +476,21 @@ because no conversion is implicit except integer to decimal.
 
 ### Current user
 
-It follows [D24](../decisions/d24-roles-and-policies.md). The type
-check, the SQL translation and binding the `@currentUser` parameter are built:
-the record API binds it when it runs a policy filter. The interpreter does not
-evaluate it, and no milestone plans that, because every policy filter runs as
-SQL.
+It follows [D24](../decisions/d24-roles-and-policies.md). The type check, the
+SQL translation and binding the `@currentUser` parameter are built: the record
+API and the data source endpoint bind it. The interpreter does not evaluate it,
+and no milestone plans that, because every filter that can call it runs as SQL.
 
 `currentUser()` gives the signed-in user's id as `text`, as the
 [session](security.md#sign-in-and-the-session) holds it. A policy
-filter uses it to compare a record with the user, such as
-`requester == currentUser()` or `department.manager == currentUser()`.
+filter or a data source `filter` uses it to compare a record with the user,
+such as `requester == currentUser()` or `department.manager == currentUser()`.
 
 - **Where.** It is allowed only in a
-  [policy filter](roles-and-policies.md), including as an
-  argument of a rule call there. Anywhere else, including inside a rule body,
-  it is `AXC0095` at the call.
+  [policy filter](roles-and-policies.md), including as an argument of a rule
+  call there, and in a [data source](data-sources.md#resource-shape) `filter`.
+  Anywhere else, including a measure `filter` and a rule body, it is `AXC0095`.
+  A schedule trigger over a data source that calls it is `AXC0363`.
 - **SQL.** It becomes the named parameter `@currentUser`, which the caller
   binds as `text`. The id is never spliced into the SQL text.
 - **One value.** Every call in one request gives the same id, so the
@@ -812,7 +812,7 @@ There are three families:
 - **Syntax.** Tokens, the grammar and literal forms.
 - **Type.** Unknown names, type mismatches, unknown enum values, wrong
   argument counts, use of something outside the SQL subset in a filter,
-  `now()` in a computed field, and `currentUser()` outside a policy filter.
+  `now()` in a computed field, and `currentUser()` outside a policy filter and a data source `filter`.
 - **Cost.** The limits on length, depth, nodes, hops, rule call depth and
   rule call cycles.
 
@@ -871,9 +871,9 @@ codes are in the [diagnostic table](configuration.md#configuration-pipeline):
 - **`AXC0086`.** A computed field calls `now()`, `today()` or `toDate`,
   including inside an aggregate's item expression, at the call. A stored value
   cannot depend on the current time or the application's time zone.
-- **`AXC0095`.** An expression that is not a policy filter calls
-  `currentUser()`, at the call. This includes a validation, a computed field,
-  a data source filter, a process expression and a rule body. A rule
+- **`AXC0095`.** An expression that is not a policy filter or a data source
+  `filter` calls `currentUser()`, at the call. This includes a validation, a
+  computed field, a measure filter, a process expression and a rule body. A rule
   argument inside a policy filter may call it.
 - **`AXC0336`.** An expression that is not a module contract's expression calls
   `previous`, at the call. This includes an entity validation, a computed

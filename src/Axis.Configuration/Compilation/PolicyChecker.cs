@@ -182,7 +182,7 @@ internal static class PolicyChecker
                 actions,
                 grant.Filter is { } filter
                     ? ExpressionModel.Compile(
-                        filter, ExpressionScopes.ForDataSource(entity.Fields, [], Find, rules, modules, undeclaredModuleIsUnknown), ExpressionType.Boolean, policyFilter: true)
+                        filter, ExpressionScopes.ForDataSource(entity.Fields, [], Find, rules, modules, undeclaredModuleIsUnknown), ExpressionType.Boolean, currentUser: true)
                     : null,
                 // A checked grant names only fields of the entity.
                 grant.Fields?.Select(name => entity.Fields.First(field => string.Equals(field.Name, name, StringComparison.OrdinalIgnoreCase)).Name).ToList());
@@ -469,7 +469,7 @@ internal static class PolicyChecker
         {
             var problem = ApplicationCompiler.CheckFilter(
                 filter, ExpressionScopes.ForDataSource(entityResource.Fields, [], findEntity, rules, modules, undeclaredModuleIsUnknown: moduleId is not null),
-                policyFilter: true,
+                currentUser: true,
                 entityResource,
                 findEntity,
                 out var check);
