@@ -7,7 +7,8 @@ namespace Axis.Integration.Tests;
 /// <summary>
 /// ModuleLayerApp declares the <c>intake</c> module, whose IntakeForm shows the <c>title</c> field of its
 /// <c>Intake</c> entity. The application's layer on that form adds the <c>notes</c> field, so the page
-/// <c>pages/intake/NewIntake</c> of its site <c>modulelayer</c> shows both. The module stays as it is.
+/// <c>pages/intake/NewIntake</c> of its site <c>modulelayer</c> shows both. Its layer on that page adds a
+/// <c>review</c> tab <c>after</c> the module's second tab. The module stays as it is.
 /// </summary>
 public sealed class ModuleLayerTests(ModuleAppFixture fixture) : IClassFixture<ModuleAppFixture>
 {
@@ -22,12 +23,24 @@ public sealed class ModuleLayerTests(ModuleAppFixture fixture) : IClassFixture<M
 
         using var page = await GetAsync(client, Page, HttpStatusCode.OK);
 
-        var widget = Assert.Single(page.RootElement.GetProperty("widgets").EnumerateArray().ToList());
-        Assert.Equal("form", widget.GetProperty("type").GetString());
+        var widget = Assert.Single(page.RootElement.GetProperty("widgets").EnumerateArray(), candidate => candidate.GetProperty("type").GetString() == "form");
         var section = Assert.Single(widget.GetProperty("form").GetProperty("sections").EnumerateArray().ToList());
         Assert.Equal(
             ["title", "notes"],
             section.GetProperty("fields").EnumerateArray().Select(field => field.GetProperty("name").GetString()));
+    }
+
+    [Fact]
+    public async Task A_clerk_reads_the_tab_that_the_layer_places_after_the_second_tab_as_the_third()
+    {
+        using var client = fixture.CreateClient().SignedInAs("layer-clerk");
+
+        using var page = await GetAsync(client, Page, HttpStatusCode.OK);
+
+        var tabs = Assert.Single(page.RootElement.GetProperty("widgets").EnumerateArray(), candidate => candidate.GetProperty("type").GetString() == "tabs");
+        Assert.Equal(
+            ["intake.pages.newIntake.details", "intake.pages.newIntake.notes", "intake.pages.newIntake.review", "intake.pages.newIntake.history"],
+            tabs.GetProperty("tabs").EnumerateArray().Select(tab => tab.GetProperty("labelKey").GetString()));
     }
 
     [Fact]

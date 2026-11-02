@@ -219,6 +219,22 @@ public sealed class CustomizationLayerTests
             Assert.Single(ApplicationCompiler.Compile(plain.Path, null, installed).Resources, resource => resource.Path == "modules/approvals/processes/Review.json").Content);
     }
 
+    [Fact]
+    public void An_escalations_own_after_is_a_duration_and_not_a_placement()
+    {
+        using var modules = Modules();
+        using var folder = Application().With(ReviewFile, Layer("approvals/Review", changes: """
+            { "steps": [ { "name": "review", "escalations": [
+                { "name": "nudge", "after": "PT4H", "reassign": { "user": "'u2'" } } ] } ] }
+            """));
+
+        var compiled = ApplicationCompiler.Compile(folder.Path, null, ModuleCatalog.Load(modules.Path).Modules);
+
+        Assert.Empty(compiled.Diagnostics);
+        var review = Assert.IsType<TaskStepModel>(Assert.Single(compiled.Model!.Processes).Steps[0]);
+        Assert.Equal(TimeSpan.FromHours(4), Assert.Single(review.Escalations).After);
+    }
+
     [Theory]
     [InlineData("""{ "steps": [ { "name": "missing", "remove": true } ] }""", DiagnosticCodes.UnknownLayerKey, "/changes/steps/0/name")]
     [InlineData("""{ "steps": [ { "name": "review", "outcomes": [ { "name": "Nope", "remove": true } ] } ] }""", DiagnosticCodes.UnknownLayerKey, "/changes/steps/0/outcomes/0/name")]
@@ -226,6 +242,9 @@ public sealed class CustomizationLayerTests
     [InlineData("""{ "steps": [ { "name": "review", "colour": "red" } ] }""", DiagnosticCodes.UnknownLayerProperty, "/changes/steps/0/colour")]
     [InlineData("""{ "steps": [ { "name": "extra", "type": "end", "colour": "red" } ] }""", DiagnosticCodes.UnknownLayerProperty, "/changes/steps/0/colour")]
     [InlineData("""{ "colour": "red" }""", DiagnosticCodes.UnknownLayerProperty, "/changes/colour")]
+    [InlineData("""{ "steps": [ { "name": "extra", "type": "end", "after": "review", "before": "done" } ] }""", DiagnosticCodes.LayerAfterAndBefore, "/changes/steps/0")]
+    [InlineData("""{ "steps": [ { "name": "extra", "type": "end", "after": "nope" } ] }""", DiagnosticCodes.UnknownLayerAnchor, "/changes/steps/0")]
+    [InlineData("""{ "steps": [ { "name": "review", "before": "nope" } ] }""", DiagnosticCodes.UnknownLayerAnchor, "/changes/steps/0")]
     public void A_change_that_cannot_apply_is_reported_at_its_path_in_the_layer_and_not_applied(string changes, string code, string path)
     {
         using var modules = Modules();

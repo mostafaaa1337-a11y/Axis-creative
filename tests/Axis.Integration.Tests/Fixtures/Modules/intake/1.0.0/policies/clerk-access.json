@@ -5,6 +5,7 @@
   "formatVersion": 1,
   "roles": ["clerk"],
   "grants": [
-    { "name": "intakeAccess", "entity": "Intake", "actions": ["read", "create"] }
+    { "name": "intakeAccess", "entity": "Intake", "actions": ["read", "create"] },
+    { "name": "intakeTotalsAccess", "dataSource": "IntakeTotals", "actions": ["read"] }
   ]
 }

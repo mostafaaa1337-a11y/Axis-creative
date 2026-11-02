@@ -69,6 +69,109 @@ public sealed class LayerMergerTests
         Assert.Equal("""{"kind":"process","name":"Review","start":"b","deep":{"x":1,"y":3}}""", result.Merged.ToJsonString());
     }
 
+    public static TheoryData<string, string, string> OrderedLists()
+    {
+        var data = new TheoryData<string, string, string>();
+        foreach (var ((kind, property), key) in ListKeys.Entries.Where(entry => entry.Value.Ordered))
+        {
+            data.Add(kind, property, key.Key!);
+        }
+
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(OrderedLists))]
+    public void An_element_of_an_ordered_list_is_placed_after_or_before_its_anchor(string kind, string property, string key)
+    {
+        using var module = JsonDocument.Parse($$"""
+            { "kind": "{{kind}}", "{{property}}": [ { "{{key}}": "a" }, { "{{key}}": "b" }, { "{{key}}": "c" } ] }
+            """);
+        var layer = Layer($$"""
+            { "{{property}}": [ { "{{key}}": "x", "after": "a" }, { "{{key}}": "y" }, { "{{key}}": "c", "before": "a", "v": 1 } ] }
+            """);
+        var diagnostics = new List<Diagnostic>();
+
+        var result = LayerMerger.Merge(kind, module.RootElement, layer, diagnostics);
+
+        Assert.Empty(diagnostics);
+        var list = result.Merged[property]!.AsArray();
+        Assert.Equal(["c", "a", "x", "b", "y"], list.Select(element => element![key]!.GetValue<string>()));
+        Assert.Equal(1, list[0]!["v"]!.GetValue<int>());
+        Assert.All(list, element =>
+        {
+            Assert.False(element!.AsObject().ContainsKey("after"));
+            Assert.False(element.AsObject().ContainsKey("before"));
+        });
+        Assert.Equal($"/changes/{property}/2/v", result.LayerPathByMergedPath[$"/{property}/0/v"]);
+        Assert.Equal($"/changes/{property}/0/{key}", result.LayerPathByMergedPath[$"/{property}/2/{key}"]);
+        Assert.DoesNotContain(result.LayerPathByMergedPath.Keys, path => path.EndsWith("/after", StringComparison.Ordinal) || path.EndsWith("/before", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void An_added_form_field_lands_right_behind_its_anchor_and_one_without_either_goes_last()
+    {
+        using var module = JsonDocument.Parse("""{ "kind": "form", "fields": [ { "field": "title" }, { "field": "amount" }, { "field": "owner" } ] }""");
+        var layer = Layer("""{ "fields": [ { "field": "note" }, { "field": "reason", "after": "TITLE" } ] }""");
+        var diagnostics = new List<Diagnostic>();
+
+        var result = LayerMerger.Merge("form", module.RootElement, layer, diagnostics);
+
+        Assert.Empty(diagnostics);
+        Assert.Equal(
+            ["title", "reason", "amount", "owner", "note"],
+            result.Merged["fields"]!.AsArray().Select(element => element!["field"]!.GetValue<string>()));
+    }
+
+    [Fact]
+    public void A_module_widget_moves_before_its_anchor_inside_a_tab_and_keeps_its_other_changes()
+    {
+        using var module = JsonDocument.Parse("""
+            { "kind": "page", "widgets": [ { "name": "tabs", "type": "tabs", "tabs": [
+                { "name": "t", "widgets": [ { "name": "w1", "type": "text" }, { "name": "w2", "type": "text" } ] } ] } ] }
+            """);
+        var layer = Layer("""
+            { "widgets": [ { "name": "tabs", "tabs": [ { "name": "t", "widgets": [ { "name": "w2", "before": "w1", "type": "form" } ] } ] } ] }
+            """);
+        var diagnostics = new List<Diagnostic>();
+
+        var result = LayerMerger.Merge("page", module.RootElement, layer, diagnostics);
+
+        Assert.Empty(diagnostics);
+        var widgets = result.Merged["widgets"]![0]!["tabs"]![0]!["widgets"]!.AsArray();
+        Assert.Equal([("w2", "form"), ("w1", "text")], widgets.Select(widget => (widget!["name"]!.GetValue<string>(), widget["type"]!.GetValue<string>())));
+        Assert.False(widgets[0]!.AsObject().ContainsKey("before"));
+    }
+
+    [Fact]
+    public void A_placement_with_both_after_and_before_is_reported_and_one_with_an_unknown_anchor_too()
+    {
+        using var module = JsonDocument.Parse("""{ "kind": "process", "steps": [ { "name": "a" }, { "name": "b" } ] }""");
+        var layer = Layer("""
+            { "steps": [ { "name": "x", "after": "a", "before": "b" }, { "name": "y", "after": "nope" }, { "name": "z", "before": 3 }, { "name": "b", "after": "b" } ] }
+            """);
+        var diagnostics = new List<Diagnostic>();
+
+        LayerMerger.Merge("process", module.RootElement, layer, diagnostics);
+
+        Assert.Equal(
+            [(DiagnosticCodes.LayerAfterAndBefore, "/changes/steps/0"), (DiagnosticCodes.UnknownLayerAnchor, "/changes/steps/1"), (DiagnosticCodes.UnknownLayerAnchor, "/changes/steps/2"), (DiagnosticCodes.UnknownLayerAnchor, "/changes/steps/3")],
+            diagnostics.Select(diagnostic => (diagnostic.Code, diagnostic.Path)).OrderBy(pair => pair.Path, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void After_and_before_stay_ordinary_properties_in_a_list_where_order_does_not_count()
+    {
+        using var module = JsonDocument.Parse("""{ "kind": "process", "steps": [ { "name": "s", "escalations": [ { "name": "e", "after": "P1D" } ] } ] }""");
+        var layer = Layer("""{ "steps": [ { "name": "s", "escalations": [ { "name": "e", "after": "PT4H" } ] } ] }""");
+        var diagnostics = new List<Diagnostic>();
+
+        var result = LayerMerger.Merge("process", module.RootElement, layer, diagnostics);
+
+        Assert.Empty(diagnostics);
+        Assert.Equal("PT4H", result.Merged["steps"]![0]!["escalations"]![0]!["after"]!.GetValue<string>());
+    }
+
     private static LayerResource Layer(string changes)
     {
         using var document = JsonDocument.Parse(changes);

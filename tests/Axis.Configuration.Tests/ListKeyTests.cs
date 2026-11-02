@@ -175,7 +175,10 @@ public sealed class ListKeyTests
         Assert.Equal(new ListKey(ListKeyMode.Keyed, "id"), records);
 
         Assert.True(ListKeys.TryGet(ResourceKinds.Page, "tabs", out var tabs));
-        Assert.Equal(new ListKey(ListKeyMode.Keyed, "name"), tabs);
+        Assert.Equal(new ListKey(ListKeyMode.Keyed, "name", true), tabs);
+
+        Assert.True(ListKeys.TryGet(ResourceKinds.Process, "escalations", out var escalations));
+        Assert.Equal(new ListKey(ListKeyMode.Keyed, "name"), escalations);
     }
 
     [Fact]
