@@ -470,9 +470,10 @@ public static class LoadDataGenerator
                         new
                         {
                             type = "table",
+                            name = "table",
                             dataSource = $"DataSource{i:D3}",
-                            rowActions = new[] { new { type = "navigate", page = form, label = Label("actions.open"), record = "id" } },
-                            toolbarActions = new[] { new { type = "navigate", page = form, label = Label("actions.new"), record = (string?)null } },
+                            rowActions = new[] { new { type = "navigate", name = "open", page = form, label = Label("actions.open"), record = "id" } },
+                            toolbarActions = new[] { new { type = "navigate", name = "new", page = form, label = Label("actions.new"), record = (string?)null } },
                         },
                     },
                 });
@@ -484,7 +485,7 @@ public static class LoadDataGenerator
                     name = form,
                     formatVersion = 1,
                     title = Label($"entity{i:D2}.formTitle"),
-                    widgets = new[] { new { type = "form", form = $"Entity{i:D2}Review" } },
+                    widgets = new[] { new { type = "form", name = "form", form = $"Entity{i:D2}Review" } },
                 });
             }
         }

@@ -71,7 +71,7 @@
     "widget": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type"],
+      "required": ["type", "name"],
       "properties": {
         "type": { "enum": ["table", "form", "taskInbox", "processInspector", "kpi", "chart", "detail", "columns", "tabs", "section"] },
         "name": { "$ref": "#/$defs/name" },
@@ -189,7 +189,7 @@
     "column": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["width", "widgets"],
+      "required": ["name", "width", "widgets"],
       "properties": {
         "width": { "type": "integer", "minimum": 1, "maximum": 12 },
         "name": { "$ref": "#/$defs/name" },
@@ -199,7 +199,7 @@
     "tab": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["label", "widgets"],
+      "required": ["name", "label", "widgets"],
       "properties": {
         "name": { "$ref": "#/$defs/name" },
         "label": { "$ref": "#/$defs/textReference" },
@@ -214,7 +214,7 @@
     "action": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "label"],
+      "required": ["type", "name", "label"],
       "properties": {
         "type": { "enum": ["startProcess", "navigate"] },
         "name": { "$ref": "#/$defs/name" },
@@ -235,7 +235,7 @@
     "rowAction": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "label"],
+      "required": ["type", "name", "label"],
       "properties": {
         "type": { "enum": ["startProcess", "navigate", "delete"] },
         "name": { "$ref": "#/$defs/name" },
@@ -276,7 +276,7 @@
     "toolbarAction": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "page", "label"],
+      "required": ["type", "name", "page", "label"],
       "properties": {
         "type": { "const": "navigate" },
         "name": { "$ref": "#/$defs/name" },

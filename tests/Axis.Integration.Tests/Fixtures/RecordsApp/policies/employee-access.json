@@ -31,6 +31,7 @@
     { "name": "itemsNamedRead", "dataSource": "ItemsNamed", "actions": ["read"] },
     { "name": "itemsOverflowRead", "dataSource": "ItemsOverflow", "actions": ["read"] },
     { "name": "overdueTicketsRead", "dataSource": "OverdueTickets", "actions": ["read"] },
+    { "name": "myTicketsRead", "dataSource": "MyTickets", "actions": ["read", "export"] },
     { "name": "itemNamesRead", "dataSource": "ItemNames", "actions": ["read"] },
     { "name": "expenseTotalsByCurrencyRead", "dataSource": "ExpenseTotalsByCurrency", "actions": ["read"] },
     { "name": "searchableItemsRead", "dataSource": "SearchableItems", "actions": ["read"] },
