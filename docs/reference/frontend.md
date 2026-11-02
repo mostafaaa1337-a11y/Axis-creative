@@ -736,21 +736,21 @@ sections marked *(planned for Mx)* are not built yet, and Dn refers to
       opens a menu of text entries, a delete entry in `dangerText`. The count
       is of the actions the widget configures besides the open link, not of
       those a row shows, so every row has the same layout even where
-      `visibleWhen` hides an action on some rows. A
-      `navigate` action may sit in either list. `startProcess` and `delete`
-      are row actions only. A row of a data source acts on its root record,
-      and a group row has no actions.
-    - **Navigate.** A button that opens another page and sets its
-      parameters. A My tickets row opens a TicketDetail page and sets its
-      `ticket` parameter:
+      `visibleWhen` hides an action on some rows. A `navigate` action may sit
+      in either list. `startProcess` and `delete` are row actions only. A row
+      of a data source acts on its root record, and a group row has no actions.
+    - **Navigate.** A button that opens another page and sets its parameters.
+      A My tickets row opens a TicketDetail page and sets its `ticket` parameter:
 
       ```json
       {
         "type": "table",
+        "name": "tickets",
         "entity": "Ticket",
         "rowActions": [
           {
             "type": "navigate",
+            "name": "open",
             "page": "TicketDetail",
             "label": { "textKey": "tickets.open" },
             "parameters": { "ticket": "id" }
@@ -762,12 +762,12 @@ sections marked *(planned for Mx)* are not built yet, and Dn refers to
       The target page declares
       `"parameters": [{ "name": "ticket", "type": "reference", "target": "Ticket", "required": true }]`.
       The click goes to `/{site}/ticketdetail?ticket=<id>`. See [D63](../decisions/d63-navigate-actions-and-page-parameters.md).
-      With `record`, the button opens `/{site}/{page}/{id}`. Without it, an
-      action to a form page, one with `opensForm`, opens `/{site}/{page}/new`.
-      A toolbar action to a form page without `record` shows only when the
-      table's `access.actions` holds `create`. A
-      click passes the table's address, with its paging and sorting, to the
-      page in history state, so a form returns to it after save or cancel.
+      With `record`, the button opens `/{site}/{page}/{id}`. Without it, an action
+      to a form page, one with `opensForm`, opens `/{site}/{page}/new`. A toolbar
+      action to a form page without `record` shows only when the table's
+      `access.actions` holds `create`. A click passes the table's address, with its
+      paging and sorting, to the page in history state, so a form returns to it
+      after save or cancel.
     - **Values.** The SPA has no full expression engine. It works out a bare
       name (`id`, a column or a field, matched ignoring case) and a literal
       (text in single quotes, a number, `true`, `false` or `null`). A button

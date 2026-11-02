@@ -3,7 +3,7 @@ using System.Runtime.Versioning;
 namespace Axis.Configuration.Tests;
 
 /// <summary>An application folder written for one test and deleted afterwards.</summary>
-internal sealed partial class TemporaryFolder : IDisposable
+internal sealed class TemporaryFolder : IDisposable
 {
     private readonly List<(string Path, UnixFileMode Mode)> _deniedFolders = [];
 
@@ -20,11 +20,6 @@ internal sealed partial class TemporaryFolder : IDisposable
         var fullPath = System.IO.Path.Combine(Path, relativePath);
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath)!);
         File.WriteAllText(fullPath, content);
-        if (System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(fullPath)) == "pages")
-        {
-            RejectUnnamedElements(relativePath, content);
-        }
-
         return this;
     }
 
@@ -46,8 +41,6 @@ internal sealed partial class TemporaryFolder : IDisposable
         File.SetUnixFileMode(fullPath, UnixFileMode.None);
         return this;
     }
-
-    static partial void RejectUnnamedElements(string relativePath, string content);
 
     public void Dispose()
     {

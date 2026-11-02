@@ -17,7 +17,7 @@ public sealed class ListKeyTests
     // No layer targets an application or a scenario.
     private static readonly string[] _untargeted = [ResourceKinds.Application, ResourceKinds.Scenario];
 
-    private static readonly string[] _pendingKinds = [ResourceKinds.Form, ResourceKinds.Page];
+    private static readonly string[] _pendingKinds = [ResourceKinds.Form];
 
     [Fact]
     public void Every_object_list_in_the_schemas_agrees_with_the_table()
@@ -72,7 +72,7 @@ public sealed class ListKeyTests
     }
 
     [Fact]
-    public void A_pending_entry_in_a_kind_other_than_form_or_page_is_reported()
+    public void A_pending_entry_in_a_kind_other_than_form_is_reported()
     {
         var schema = Parse("""
             {
@@ -81,9 +81,9 @@ public sealed class ListKeyTests
             }
             """);
 
-        var problems = Problems(ResourceKinds.Entity, schema, Pending);
+        var problems = Problems(ResourceKinds.Page, schema, Pending);
 
-        Assert.Equal(["entity: things is pending, which only a form or page list may be"], problems);
+        Assert.Equal(["page: things is pending, which only a form list may be"], problems);
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public sealed class ListKeyTests
             }
             """);
 
-        Assert.Empty(Problems(ResourceKinds.Page, schema, Pending));
+        Assert.Empty(Problems(ResourceKinds.Form, schema, Pending));
     }
 
     [Fact]
@@ -173,6 +173,9 @@ public sealed class ListKeyTests
 
         Assert.True(ListKeys.TryGet(ResourceKinds.Seed, "records", out var records));
         Assert.Equal(new ListKey(ListKeyMode.Keyed, "id"), records);
+
+        Assert.True(ListKeys.TryGet(ResourceKinds.Page, "tabs", out var tabs));
+        Assert.Equal(new ListKey(ListKeyMode.Keyed, "name"), tabs);
     }
 
     [Fact]
@@ -284,7 +287,7 @@ public sealed class ListKeyTests
                 case ListKeyMode.Pending:
                     if (!_pendingKinds.Contains(kind))
                     {
-                        problems.Add($"{kind}: {property} is pending, which only a form or page list may be");
+                        problems.Add($"{kind}: {property} is pending, which only a form list may be");
                     }
                     else if (objectItems.All(item => Requires(item, "name")))
                     {
