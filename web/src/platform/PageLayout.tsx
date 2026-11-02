@@ -24,7 +24,7 @@ export function PageLayout({
   actions,
   compact: compactProp,
   status,
-  titleShown = true,
+  bandTitle = 'shown',
   children,
 }: {
   title: string
@@ -42,10 +42,11 @@ export function PageLayout({
    */
   status?: ReactNode
   /**
-   * Proposed: false when the sidebar already names the page, as a Studio list or view: a compact band then keeps the
-   * title as its heading for assistive technology only, and shows the status in its place.
+   * Proposed: how a compact band holds the page's title. `hidden` when the sidebar already names the page, as a Studio
+   * list or view: the band keeps the title as its heading for assistive technology only, and shows the status in its
+   * place. `none` when the page's content heads itself, as an open Studio resource, so the page has one heading.
    */
-  titleShown?: boolean
+  bandTitle?: 'shown' | 'hidden' | 'none'
   children: ReactNode
 }) {
   const { spacing } = useDesignTokens()
@@ -69,7 +70,7 @@ export function PageLayout({
     // Proposed: under a compact band the content starts as far from it as from the page area's sides.
     <Flex vertical gap={compact ? contentPadding : 'middle'}>
       {breadcrumb && compact ? (
-        <CompactBand steps={breadcrumb} title={title} actions={actions} status={status} titleShown={titleShown} />
+        <CompactBand steps={breadcrumb} title={title} actions={actions} status={status} bandTitle={bandTitle} />
       ) : breadcrumb ? (
         <HeaderBand steps={breadcrumb}>{heading}</HeaderBand>
       ) : (
@@ -95,13 +96,13 @@ function CompactBand({
   title,
   actions,
   status,
-  titleShown,
+  bandTitle,
 }: {
   steps: readonly BreadcrumbStep[]
   title: string
   actions?: ReactNode
   status?: ReactNode
-  titleShown: boolean
+  bandTitle: 'shown' | 'hidden' | 'none'
 }) {
   const t = useText()
   const { colour, spacing } = useDesignTokens()
@@ -126,7 +127,7 @@ function CompactBand({
         borderBottom: `1px solid ${colour.borderSubtle}`,
       }}
     >
-      {titleShown || earlier.length > 0 ? (
+      {bandTitle === 'shown' || earlier.length > 0 ? (
         <Breadcrumb
           aria-label={t('shell.breadcrumb.label')}
           style={{ flex: '0 1 auto', minWidth: 0 }}
@@ -143,11 +144,11 @@ function CompactBand({
             },
           ]}
         />
-      ) : (
+      ) : bandTitle === 'hidden' ? (
         <Typography.Title level={5} style={{ ...visuallyHidden, margin: 0 }}>
           {title}
         </Typography.Title>
-      )}
+      ) : null}
       {status}
       <div style={{ flex: 1 }} />
       {actions}

@@ -1,5 +1,5 @@
-import { Alert, Button, Descriptions, Flex, Input, Result, Typography } from 'antd'
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { Alert, Button, Flex, Input, Result, Typography } from 'antd'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 import { fetchCurrentUser } from '../platform/currentUser'
 import { forbidden } from '../platform/inspection'
@@ -415,7 +415,7 @@ function StudioWorkspace() {
         compact
         title={title}
         breadcrumb={steps}
-        titleShown={false}
+        bandTitle={selected || selectedModuleItem ? 'none' : 'hidden'}
         status={
           !(loaded && 'resources' in loaded) ? undefined : view.name === 'overview' &&
             !selected &&
@@ -472,9 +472,9 @@ function StudioWorkspace() {
           <div data-testid="studio-resource-details">
             {selected ? (
               <Flex vertical gap="middle">
-                <Descriptions
+                <ResourceHeading
                   title={resourceTitle(selected)}
-                  column={1}
+                  detail={path ? [selected.file, path] : [selected.file]}
                   extra={
                     canTest && selected.kind === 'scenario' && selected.name ? (
                       <Button
@@ -486,12 +486,6 @@ function StudioWorkspace() {
                       </Button>
                     ) : undefined
                   }
-                  items={[
-                    { key: 'kind', label: t('shell.studio.kind'), children: selected.kind },
-                    { key: 'id', label: t('shell.studio.id'), children: selected.id },
-                    { key: 'file', label: t('shell.studio.file'), children: selected.file },
-                    ...(path ? [{ key: 'path', label: t('shell.studio.path'), children: path }] : []),
-                  ]}
                 />
                 <StudioNamesContext.Provider value={names ?? undefined}>
                   <StudioEditor
@@ -534,14 +528,9 @@ function StudioWorkspace() {
               </Flex>
             ) : selectedModuleItem ? (
               <Flex vertical gap="middle">
-                <Descriptions
+                <ResourceHeading
                   title={selectedModuleItem.name}
-                  column={1}
-                  items={[
-                    { key: 'kind', label: t('shell.studio.kind'), children: selectedModuleItem.kind },
-                    { key: 'id', label: t('shell.studio.id'), children: selectedModuleItem.id },
-                    { key: 'module', label: t('shell.studio.module'), children: selectedModuleItem.module },
-                  ]}
+                  detail={[`${t('shell.studio.module')}: ${selectedModuleItem.module}`]}
                 />
                 <StudioNamesContext.Provider value={names ?? undefined}>
                   <ModuleResourceView
@@ -617,6 +606,27 @@ function StudioWorkspace() {
 }
 
 /** Proposed: the workspace address of a view of `application`. */
+/**
+ * Proposed: an open resource heads the page with its title, the page's one heading, as the band names nothing. Under
+ * it one line in textMuted says where the resource lives: its file and the path in it, or the module it comes from.
+ * The sidebar already marks its kind, so the line repeats neither the kind nor the id. The resource's own actions,
+ * such as Run scenario, sit on the right of the title.
+ */
+function ResourceHeading({ title, detail, extra }: { title: string; detail: readonly string[]; extra?: ReactNode }) {
+  const { colour } = useDesignTokens()
+  return (
+    <Flex vertical gap={4}>
+      <Flex align="center" justify="space-between" gap="middle" wrap>
+        <Typography.Title level={4} style={{ margin: 0 }}>
+          {title}
+        </Typography.Title>
+        {extra}
+      </Flex>
+      <Typography.Text style={{ color: colour.textMuted }}>{detail.join(' · ')}</Typography.Text>
+    </Flex>
+  )
+}
+
 function studioAddress(application: string, view: StudioView): string {
   const app = `app=${encodeURIComponent(application)}`
   switch (view.name) {
