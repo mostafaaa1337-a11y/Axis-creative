@@ -90,9 +90,10 @@ providers it allows, see
   "widgets": [
     {
       "type": "table",
+      "name": "requests",
       "entity": "PurchaseRequest",
-      "rowActions": [{ "type": "navigate", "page": "PurchaseRequestForm", "label": { "textKey": "actions.open" }, "record": "id" }],
-      "toolbarActions": [{ "type": "navigate", "page": "PurchaseRequestForm", "label": { "textKey": "actions.new" } }]
+      "rowActions": [{ "type": "navigate", "name": "open", "page": "PurchaseRequestForm", "label": { "textKey": "actions.open" }, "record": "id" }],
+      "toolbarActions": [{ "type": "navigate", "name": "new", "page": "PurchaseRequestForm", "label": { "textKey": "actions.new" } }]
     }
   ]
 }
@@ -116,7 +117,7 @@ providers it allows, see
 - A `table` widget opens and creates records through `navigate` actions, see
   below. It has no link to a form page of its own.
 - A `form` or `detail` widget may list `actions`. Each is
-  `{ "type": "startProcess", "process": "PurchaseRequestApproval", "label": { "textKey": "purchaseRequest.submit" } }`,
+  `{ "type": "startProcess", "name": "submit", "process": "PurchaseRequestApproval", "label": { "textKey": "purchaseRequest.submit" } }`,
   a button that starts the process for the form's record. See
   [frontend.md](frontend.md).
 - A `table` widget may list `rowActions` and `toolbarActions`. For now each
@@ -125,8 +126,8 @@ providers it allows, see
   `navigate` row action is the link of the identifying column instead
   _(planned)_, see [frontend](frontend.md). A `delete`
   asks for confirmation, then deletes the row's record. An entry has a `type`, such as
-  `{ "type": "startProcess", "process": "PurchaseRequestApproval", "label": { "textKey": "purchaseRequest.submit" } }` or
-  `{ "type": "delete", "label": { "textKey": "purchaseRequest.delete" } }`.
+  `{ "type": "startProcess", "name": "submit", "process": "PurchaseRequestApproval", "label": { "textKey": "purchaseRequest.submit" } }` or
+  `{ "type": "delete", "name": "delete", "label": { "textKey": "purchaseRequest.delete" } }`.
   `navigate` may sit in either list. `startProcess` and `delete` sit in
   `rowActions` only, and the row is their subject. A `navigate`,
   `startProcess` or `delete` entry in `rowActions` may have `visibleWhen`, a boolean
@@ -136,7 +137,7 @@ providers it allows, see
   `record`, and a `delete` in `toolbarActions` or a form's `actions`. See [frontend.md](frontend.md) and
   [D59](../decisions/d59-table-row-and-toolbar-actions.md).
 - A `table` widget may name a `dataSource` instead of an `entity`, such as
-  `{ "type": "table", "dataSource": "PurchaseRequestList" }`.
+  `{ "type": "table", "name": "requests", "dataSource": "PurchaseRequestList" }`.
   Its columns are the data source's projected fields. See
   [widget binding](data-sources.md#widget-binding).
 - A page may declare typed `parameters`. Each has a `name`, a `type` (text,
@@ -168,7 +169,7 @@ providers it allows, see
   the SPA shows its button. It sits in a
   table's `rowActions` or `toolbarActions` ([D59](../decisions/d59-table-row-and-toolbar-actions.md)),
   or in a form's `actions`:
-  `{ "type": "navigate", "page": "TicketDetail", "label": { "textKey": "tickets.open" }, "parameters": { "ticket": "id" } }`.
+  `{ "type": "navigate", "name": "open", "page": "TicketDetail", "label": { "textKey": "tickets.open" }, "parameters": { "ticket": "id" } }`.
   Each value is an expression, see
   [expressions](expressions.md#names-and-references). In `toolbarActions` the
   expressions see no names, because a toolbar has no row. The checks are in
@@ -193,27 +194,33 @@ widgets `columns`, `tabs` and `section` hold other widgets, see
   "widgets": [
     {
       "type": "columns",
+      "name": "layout",
       "columns": [
         {
+          "name": "main",
           "width": 8,
           "widgets": [
-            { "type": "table", "entity": "PurchaseRequest" }
+            { "type": "table", "name": "requests", "entity": "PurchaseRequest" }
           ]
         },
         {
+          "name": "side",
           "width": 4,
           "widgets": [
             {
               "type": "tabs",
+              "name": "side-tabs",
               "tabs": [
                 {
+                  "name": "tasks",
                   "label": { "textKey": "pages.overview.tasks" },
                   "widgets": [
                     {
                       "type": "section",
+                      "name": "tasks-section",
                       "title": { "textKey": "pages.overview.tasksTitle" },
                       "collapsed": true,
-                      "widgets": [{ "type": "taskInbox" }]
+                      "widgets": [{ "type": "taskInbox", "name": "inbox" }]
                     }
                   ]
                 }
@@ -233,15 +240,14 @@ widgets `columns`, `tabs` and `section` hold other widgets, see
 - A `section` widget has a `title`, its `widgets` and an optional `collapsed`,
   which defaults to `false`.
 - A label and a title are `{ "textKey": ... }`, like a page title.
-- Containers nest to at most 4 levels. The page's own `widgets` list is
-  level 1.
+- Containers nest to at most 4 levels. The page's own `widgets` list is level 1.
 - A page holds at most one `table` of any kind, and at most one `form`,
   `taskInbox` or `processInspector`, so the URL state stays unambiguous.
   Every `widgets`, `columns` and `tabs` list has at least one entry.
 - The compiler checks every widget at any depth. A problem is reported at the
   widget's own JSON pointer, such as `/widgets/0/columns/1/widgets/0/entity`.
-- A widget, an action, a column or a tab may have a `name`. The name is optional,
-  and no layer reads it yet.
+- A widget, an action, a row action, a toolbar action, a column and a tab require a `name`.
+  A missing one is `AXC0004` at the element, such as `/widgets/0/tabs/1`.
 - A widget's `name` is unique on the whole page, at any depth, ignoring letter case.
   A repeat is `AXC0361`, reported at the later widget's `name`.
 - An action, column or tab `name` is unique in its own list, ignoring letter case.
@@ -249,8 +255,7 @@ widgets `columns`, `tabs` and `section` hold other widgets, see
   `form` or `detail` widget, a table's `rowActions` and `toolbarActions`, a
   `columns` widget's columns and a `tabs` widget's tabs each have their own list,
   so a row action and a toolbar action may share a name.
-- A kpi's `navigate` action has no `name`. The schema refuses one there.
-- `formatVersion` stays 1. Today's pages stay valid.
+- A kpi's `navigate` action has no `name`. The schema refuses one there. `formatVersion` stays 1.
 
 A `seed` holds records with fixed ids for one entity:
 

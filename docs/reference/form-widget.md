@@ -291,10 +291,12 @@ and Dn refers to [decisions.md](../decisions.md). The rest of the frontend is in
     ```json
     {
       "type": "form",
+      "name": "edit",
       "form": "PurchaseRequestEdit",
       "actions": [
         {
           "type": "startProcess",
+          "name": "submit",
           "process": "PurchaseRequestApproval",
           "label": { "textKey": "purchaseRequest.submit" }
         }
