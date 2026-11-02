@@ -89,7 +89,8 @@ One transaction then does the rest:
    create command. So references, sequences, field defaults, computed fields
    and validations apply, as in a [record API create](record-api.md#create-update-and-delete).
    A field the mapping leaves out gets its default, so a required field with
-   a default needs no mapping. The creator field gets the caller's id. Errors are a `400` keyed
+   a default needs no mapping. The creator field gets the caller's id, and a
+   [matched reference](resource-files.md#matched-references) is set after it. Errors are a `400` keyed
    `/values/<field>`, and a unique-value conflict is a `409`.
 3. It starts the processes of the [data change triggers](process-events.md#starts-from-triggers)
    on `create` for the entity, as `system`, in the order of the release. A

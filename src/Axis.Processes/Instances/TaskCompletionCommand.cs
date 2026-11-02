@@ -158,7 +158,8 @@ public static class TaskCompletionCommand
                     TaskCompletionOutcome.WriteFailed, Write: new RecordWriteResult(RecordWriteOutcome.NotFound));
             }
 
-            var computed = RecordComputer.ComputeUpdate(release, entity, stored, input.Values, input.Rows);
+            var matched = await RecordMatcher.WithMatchesAsync(connection, release, entity, input.Values, stored, cancellationToken);
+            var computed = RecordComputer.ComputeUpdate(release, entity, stored, matched, input.Rows);
             if (computed.Errors is { } computeErrors)
             {
                 return new TaskCompletionResult(TaskCompletionOutcome.Invalid, computeErrors);

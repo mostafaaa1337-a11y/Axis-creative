@@ -196,7 +196,7 @@ internal sealed partial class RecordImportCheckHandler(
                 continue;
             }
 
-            if (RecordCommand.PrepareCreate(application, entity, actor, parse.Input!, form: null, now).Errors is { } prepareErrors)
+            if ((await RecordCommand.PrepareCreateAsync(connection, application, entity, actor, parse.Input!, form: null, now, cancellationToken: cancellationToken)).Errors is { } prepareErrors)
             {
                 Add(errors, prefix, prepareErrors);
             }
