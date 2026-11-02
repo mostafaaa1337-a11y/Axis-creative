@@ -169,9 +169,14 @@ export function StudioNavigation({
 
   const navigation = (
     <nav aria-label={t('shell.studio.nav.label')}>
-      {/* Proposed: the application's row is 48 px, as the header band beside it, so their rules line up. */}
+      {/* Proposed: the application's row is 48 px, as the header band beside it, so their rules line up. It stays in
+          place as the band does, and only the entries under it scroll when the sidebar is taller than the window. */}
       <div
         style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 1,
+          background: colour.surface,
           height: 48,
           boxSizing: 'border-box',
           padding: `0 ${spacing.xs}px`,

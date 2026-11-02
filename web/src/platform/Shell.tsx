@@ -83,6 +83,19 @@ export function Shell({
   // Proposed: a page with its own navigation claims the sidebar and draws in `pageSidebarSlot`.
   const [pageSidebar, setPageSidebar] = useState(false)
   const [pageSidebarSlot, setPageSidebarSlot] = useState<HTMLElement | null>(null)
+  // Proposed: the footer's height, which the sidebar's navigation leaves free, so the footer scrolling into view does
+  // not push the navigation up while the band beside it stays in place.
+  const footer = useRef<HTMLDivElement>(null)
+  const [footerHeight, setFooterHeight] = useState(0)
+  useEffect(() => {
+    const element = footer.current
+    if (!element) {
+      return
+    }
+    const observer = new ResizeObserver(() => setFooterHeight(element.offsetHeight))
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
   // Proposed: a page with its own navigation is a workspace, drawn compact: spacing-md round its content.
   const contentPadding = pageSidebar ? spacing.md : spacing.lg
   const sidebarContext = useMemo(
@@ -231,7 +244,7 @@ export function Shell({
                   style={{
                     position: 'sticky',
                     top: 48,
-                    maxHeight: 'calc(100vh - 48px)',
+                    maxHeight: `calc(100vh - ${48 + footerHeight}px)`,
                     overflowY: 'auto',
                     // Proposed: its scrollbar is the page's own, as the colour scheme draws it, so the two match.
                   }}
@@ -255,7 +268,9 @@ export function Shell({
               <ShellSidebarContext.Provider value={sidebarContext}>{children}</ShellSidebarContext.Provider>
             </Layout.Content>
           </Layout>
-          <ShellFooter legal={legal} />
+          <div ref={footer}>
+            <ShellFooter legal={legal} />
+          </div>
         </Layout>
       </ConfigProvider>
     </div>
