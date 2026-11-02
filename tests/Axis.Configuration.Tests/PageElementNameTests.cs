@@ -12,6 +12,7 @@ public sealed class PageElementNameTests
         "samples/apps",
         "samples/templates",
         "samples/modules",
+        "modules",
         "tests/Axis.Configuration.Tests/Fixtures",
         "tests/Axis.Integration.Tests/Fixtures",
         "tests/e2e/fixtures",

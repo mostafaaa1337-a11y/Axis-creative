@@ -1,0 +1,30 @@
+{
+  "id": "9fcbdc3e-0b2c-4ef1-8a6a-a53e4fbe0386",
+  "kind": "text",
+  "name": "TextsEn",
+  "formatVersion": 1,
+  "locale": "en",
+  "texts": {
+    "organization.department.label": "Department",
+    "organization.department.code": "Code",
+    "organization.department.name": "Name",
+    "organization.department.parent": "Parent department",
+    "organization.department.head": "Head",
+    "organization.department.active": "Active",
+    "organization.department.codeUpperCase": "Use capital letters for the code.",
+    "organization.employee.label": "Employee",
+    "organization.employee.fullName": "Full name",
+    "organization.employee.workEmail": "Work email",
+    "organization.employee.phone": "Phone",
+    "organization.employee.jobTitle": "Job title",
+    "organization.employee.department": "Department",
+    "organization.employee.manager": "Manager",
+    "organization.employee.user": "Account",
+    "organization.employee.active": "Active",
+    "organization.employee.delegate": "Delegate",
+    "organization.employee.delegateFrom": "Absent from",
+    "organization.employee.delegateUntil": "Absent until",
+    "organization.roles.admin": "Organization administrator",
+    "organization.roles.member": "Organization member"
+  }
+}
