@@ -125,8 +125,8 @@ Compilation applies each layer to the resource of the pinned module version, bef
   A layer on a `contract` or a `scenario` is stored and not applied _(planned for M25)_.
 - **Checks of the layer itself.** A key in `changes` that the module's resource does not have, as a
   change, a remove or an anchor of `after` or `before`, is a diagnostic. So is a property that the
-  kind does not have. A layer never matches by position. The checks are `AXC0359` for an unknown key
-  in a remove, `AXC0360` for a remove that holds more than its key and `AXC0361` for an unknown
+  kind does not have. A layer never matches by position. The checks are `AXC0362` for an unknown key
+  in a remove, `AXC0363` for a remove that holds more than its key and `AXC0364` for an unknown
   property, each reported at its path under `/changes` in the layer file. A layer with one of them is
   not applied. An element whose key the module's list lacks is an added element until `after` and
   `before` exist, so only a remove can name an unknown key.
@@ -156,8 +156,8 @@ same change.
 schemas.
 
 - A key is unique in its list, ignoring letter case. An entity's `validations` and `indexes` require
-  `name` (`AXC0004` when it is missing) and report a repeated name as `AXC0343`. A policy's `grants` require `name` too (`AXC0004` when it is missing) and report a repeated name as `AXC0353`. A widget's `name` is unique on its page,
-  whatever its depth, so a layer finds a widget inside a section or a tab by its name.
+  `name` (`AXC0004` when it is missing) and report a repeated name as `AXC0343`. A policy's `grants` require `name` too (`AXC0004` when it is missing) and report a repeated name as `AXC0353`. A decision's `branches` and a task's `escalations` require `name` as well (`AXC0004` when it is missing) and report a repeated name as `AXC0359`, and a form's `steps` do the same and report it as `AXC0360`. Each of these names is unique in its own list: one decision's branches, one task's escalations or one form's steps. A widget's `name` is unique on its page,
+  whatever its depth, so a layer finds a widget inside a section or a tab by its name. A repeated name on a page, in a widget's own list of actions, columns or tabs, is `AXC0361`, and `name` stays optional there.
 - An element of a list that the table does not name is part of a value list.
 - A list that the table still marks as pending in code, such as a process's `branches` and
   `escalations`, a form's `sections` and `steps` and the lists of a page, is a value list until its

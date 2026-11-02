@@ -155,8 +155,8 @@ export function serverEnv(baseURL: string): Record<string, string> {
     // The sample extension package payment-references, which scripts/build.sh installs. The worker gets
     // the same folder from scripts/e2e.sh.
     Extensions__Path: extensionsPath,
-    // The sample modules departments and department-budgets, which scripts/build.sh installs. The worker gets the same folder from
-    // scripts/e2e.sh.
+    // The built-in module organization and the sample modules departments and department-budgets, which scripts/build.sh
+    // installs. The worker gets the same folder from scripts/e2e.sh.
     Modules__Path: modulesPath,
     // The sample templates, which scripts/build.sh installs. Only the server reads them.
     Templates__Path: templatesPath,
@@ -209,5 +209,7 @@ export function journeyServerEnv(): Record<string, string> {
     Studio__AuthorRole: 'author',
     Studio__PublisherRole: 'publisher',
     Studio__Tests: 'true',
+    // Lets the operator console routes answer the platform-operator user, as on the main server.
+    Console__OperatorRole: 'platform-operator',
   }
 }

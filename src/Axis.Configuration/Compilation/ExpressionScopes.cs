@@ -28,7 +28,8 @@ namespace Axis.Configuration.Compilation;
 /// path cannot start at it, and the names of the row or record. It has no rules and no collections. A field default sees no fields, no collections and no
 /// paths, and has the rules it is given. A module contract's effect value sees <c>id</c> as a reference
 /// parameter to the contract's entity, then the entity's fields and child collections and the module's
-/// rules, and resolves no paths.
+/// rules, and resolves no paths. A module contract's core validation sees the same <c>id</c> first, then the entity's fields,
+/// computed ones included, and the module's rules.
 /// </summary>
 public static class ExpressionScopes
 {
@@ -68,13 +69,15 @@ public static class ExpressionScopes
         Func<string, EntityResource?>? findEntity = null,
         IEnumerable<string>? modules = null,
         bool references = true,
-        bool undeclaredModuleIsUnknown = false)
+        bool undeclaredModuleIsUnknown = false,
+        string? idEntity = null)
     {
         var all = fields.ToList();
         return Build(
             all
                 .Where(field => includeComputed || field.Expression is null)
-                .Select(field => (field.Name, TypeOf(field))),
+                .Select(field => (field.Name, TypeOf(field)))
+                .Prepend(("id", idEntity is null ? null : (ExpressionType?)ExpressionType.ReferenceParameter(idEntity))),
             rules,
             findEntity is null ? null : CollectionsOf(all, findEntity, references),
             referenceFields: null,

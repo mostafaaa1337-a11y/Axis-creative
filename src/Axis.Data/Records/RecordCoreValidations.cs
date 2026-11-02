@@ -14,11 +14,12 @@ namespace Axis.Data.Records;
 /// </summary>
 internal static class RecordCoreValidations
 {
-    /// <summary>Checks a create. <c>previous</c> is <c>null</c> for every field.</summary>
+    /// <summary>Checks a create. <c>previous</c> is <c>null</c> for every field. <c>id</c> is <paramref name="id"/>, the id the record will get.</summary>
     public static async Task<RecordWriteResult?> CheckCreateAsync(
         NpgsqlConnection connection,
         ApplicationModel application,
         EntityModel entity,
+        Guid id,
         IReadOnlyList<RecordValue> values,
         IReadOnlyList<RecordRows> rows,
         IReadOnlyList<RecordLinks> links,
@@ -31,7 +32,7 @@ internal static class RecordCoreValidations
             return null;
         }
 
-        return await RunAsync(connection, application, entity, stored: null, values, rows, links, context, cipher, cancellationToken);
+        return await RunAsync(connection, application, entity, id, stored: null, values, rows, links, context, cipher, cancellationToken);
     }
 
     /// <summary>
@@ -68,7 +69,7 @@ internal static class RecordCoreValidations
             return new RecordWriteResult(RecordWriteOutcome.StaleVersion);
         }
 
-        return await RunAsync(connection, application, entity, stored, values, rows, links, context, cipher, cancellationToken);
+        return await RunAsync(connection, application, entity, id, stored, values, rows, links, context, cipher, cancellationToken);
     }
 
     private static bool HasValidations(EntityModel entity) => entity.Contract?.Validations.Count > 0;
@@ -77,6 +78,7 @@ internal static class RecordCoreValidations
         NpgsqlConnection connection,
         ApplicationModel application,
         EntityModel entity,
+        Guid id,
         Record? stored,
         IReadOnlyList<RecordValue> values,
         IReadOnlyList<RecordRows> rows,
@@ -91,6 +93,7 @@ internal static class RecordCoreValidations
             application,
             entity,
             stored,
+            id,
             values,
             rows,
             now,

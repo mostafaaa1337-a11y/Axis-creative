@@ -340,7 +340,10 @@ public static class DiagnosticCodes
     public const string UnknownRelaxPoint = "AXC0356";
     public const string DuplicateRelaxPoint = "AXC0357";
     public const string MissingRelaxReason = "AXC0358";
-    public const string UnknownLayerKey = "AXC0359";
-    public const string InvalidLayerRemove = "AXC0360";
-    public const string UnknownLayerProperty = "AXC0361";
+    public const string DuplicateProcessElementName = "AXC0359";
+    public const string DuplicateFormStepName = "AXC0360";
+    public const string DuplicatePageElementName = "AXC0361";
+    public const string UnknownLayerKey = "AXC0362";
+    public const string InvalidLayerRemove = "AXC0363";
+    public const string UnknownLayerProperty = "AXC0364";
 }

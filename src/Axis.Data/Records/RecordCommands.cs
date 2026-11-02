@@ -75,7 +75,8 @@ public static class RecordCommands
         ArgumentNullException.ThrowIfNull(rows);
         links ??= [];
 
-        if (await RecordCoreValidations.CheckCreateAsync(connection, application, entity, values, rows, links, context, cipher, cancellationToken) is { } coreFailure)
+        var recordId = id ?? Guid.CreateVersion7();
+        if (await RecordCoreValidations.CheckCreateAsync(connection, application, entity, recordId, values, rows, links, context, cipher, cancellationToken) is { } coreFailure)
         {
             return coreFailure;
         }
@@ -90,7 +91,6 @@ public static class RecordCommands
             return missing;
         }
 
-        var recordId = id ?? Guid.CreateVersion7();
         if (await AttachFilesAsync(connection, application, entity, recordId, uploader, values, rows, cancellationToken) is { } refused)
         {
             return refused;

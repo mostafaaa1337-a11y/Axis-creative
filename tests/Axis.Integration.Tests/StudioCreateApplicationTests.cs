@@ -51,6 +51,8 @@ public sealed class StudioCreateApplicationTests(PostgreSqlFixture database) : I
 
         using var site = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(folder, "sites/purchase-orders.json"), CancellationToken));
         Assert.Equal("purchase-orders", site.RootElement.GetProperty("path").GetString());
+        using var home = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(folder, "pages/home.json"), CancellationToken));
+        Assert.Equal("taskInbox1", home.RootElement.GetProperty("widgets")[0].GetProperty("name").GetString());
         using var texts = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(folder, "texts/en.json"), CancellationToken));
         Assert.Equal("PurchaseOrders", texts.RootElement.GetProperty("texts").GetProperty("site.title").GetString());
         Assert.Equal(5, Files(folder).Select(file => IdOf(Path.Combine(folder, file))).Distinct().Count());
@@ -360,7 +362,7 @@ public sealed class StudioCreateApplicationTests(PostgreSqlFixture database) : I
                   "name": "Home",
                   "formatVersion": 1,
                   "title": { "textKey": "pages.home.title" },
-                  "widgets": [{ "type": "taskInbox" }]
+                  "widgets": [{ "type": "taskInbox", "name": "taskInbox" }]
                 }
                 """);
             Write(folder, "texts/en.json", $$"""

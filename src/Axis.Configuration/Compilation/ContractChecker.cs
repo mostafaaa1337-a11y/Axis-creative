@@ -578,7 +578,8 @@ internal static class ContractChecker
                 rules: rulesFor(contract),
                 findEntity: findEntity,
                 modules: modulesFor(contract),
-                undeclaredModuleIsUnknown: true);
+                undeclaredModuleIsUnknown: true,
+                idEntity: entity.Name);
             var parsed = ExpressionParser.Parse(validation.Expression);
             var problem = parsed.Succeeded ? ExpressionTypeChecker.Check(parsed.Expression, scope, ExpressionType.Boolean, contract: true).Diagnostic : parsed.Diagnostic;
             if (problem is not null)
