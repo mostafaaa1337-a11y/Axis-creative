@@ -212,7 +212,7 @@ internal static class InboundEndpoints
         }
 
         // The defaults, the computed fields and the validations run in the write transaction, so their
-        // now() is its start time. The defaults and the creator fields are set first, as in a record API
+        // now() is its start time. The defaults, the creator fields and the matched references are set first, as in a record API
         // create, so the computed fields and validations see the record as it will be stored.
         var now = await RecordQueries.TransactionTimeAsync(connection, cancellationToken);
         var defaults = RecordDefaults.Apply(entity, mapped.Values, now, application.TimeZone);
@@ -222,7 +222,7 @@ internal static class InboundEndpoints
             return new(Results.ValidationProblem(defaultErrors));
         }
 
-        var values = RecordCreator.WithCreator(entity, defaults.Values, caller.Id);
+        var values = await RecordMatcher.WithMatchesAsync(connection, application, entity, RecordCreator.WithCreator(entity, defaults.Values, caller.Id), null, cancellationToken);
         var computed = RecordComputer.ComputeCreate(application, entity, values, mapped.Rows);
         if (computed.Errors is { } computeErrors)
         {

@@ -352,7 +352,7 @@ Policies add more checks. The full order is:
 8. The query of a list, or the body, `400`. Then, on a list, a `sort` or
    `search` on a pending field, `409`.
 9. Fields the user may not write, `403`.
-10. The computed fields and the validations, `400`, then storage.
+10. The matched references, then the computed fields and the validations, `400`, then storage.
 11. On create and update, the new record outside every `create` or `update`
     filter, `403`.
 
@@ -679,7 +679,9 @@ A record with a child collection holds its rows inside `values`:
    record is read first, with its rows and sets. An unknown record is still a `404`,
    never a `400`.
    The server then builds the record as it will be stored: the stored values,
-   the changes from the body, the rows it will store and the computed fields. A computed field that
+   the changes from the body, the
+   [matched references](resource-files.md#matched-references) set from them, the rows it will
+   store and the computed fields. A computed field that
    fails is a `400`, and then no validation runs. So a change to one field
    can break a validation reported on another.
 3. The validations of the entity and of each row the body sends run, inside

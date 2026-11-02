@@ -93,7 +93,7 @@ public static class SeedApplier
                 var sensitive = input.Values.Where(value => value.Field.Sensitive).ToList();
                 var found = await RecordCommands.FindVersionAsync(connection, entity, id, plain, cancellationToken);
                 Record? stored = null;
-                if (found is not null && (entity.HasComputedFields || sensitive.Count > 0))
+                if (found is not null && (entity.HasComputedFields || sensitive.Count > 0 || RecordMatcher.HasMatches(entity)))
                 {
                     stored = await RecordQueries.GetAsync(connection, model, entity, id, cipher, cancellationToken);
                 }
@@ -109,7 +109,8 @@ public static class SeedApplier
                 if (found is { } existing)
                 {
                     // The seed declares only some values, so the others come from the stored record.
-                    var computed = RecordComputer.ComputeUpdate(model, entity, entity.HasComputedFields ? stored : null, input.Values, input.Rows);
+                    var matched = await RecordMatcher.WithMatchesAsync(connection, model, entity, input.Values, stored, cancellationToken);
+                    var computed = RecordComputer.ComputeUpdate(model, entity, entity.HasComputedFields ? stored : null, matched, input.Rows);
                     if (computed.Errors is { } errors)
                     {
                         await transaction.RollbackAsync(cancellationToken);
@@ -127,7 +128,8 @@ public static class SeedApplier
                         return NotComputed(seed, index, defaultErrors);
                     }
 
-                    var computed = RecordComputer.ComputeCreate(model, entity, defaults.Values, input.Rows);
+                    var matched = await RecordMatcher.WithMatchesAsync(connection, model, entity, defaults.Values, null, cancellationToken);
+                    var computed = RecordComputer.ComputeCreate(model, entity, matched, input.Rows);
                     if (computed.Errors is { } errors)
                     {
                         await transaction.RollbackAsync(cancellationToken);
@@ -151,7 +153,8 @@ public static class SeedApplier
                     return NotComputed(seed, index, defaultErrors);
                 }
 
-                var computed = RecordComputer.ComputeCreate(model, entity, defaults.Values, input.Rows);
+                var matched = await RecordMatcher.WithMatchesAsync(connection, model, entity, defaults.Values, null, cancellationToken);
+                var computed = RecordComputer.ComputeCreate(model, entity, matched, input.Rows);
                 if (computed.Errors is { } errors)
                 {
                     await transaction.RollbackAsync(cancellationToken);

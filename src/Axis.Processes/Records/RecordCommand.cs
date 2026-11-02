@@ -150,8 +150,8 @@ public delegate Task<byte[]?> RecordBodyReader(CancellationToken cancellationTok
 /// A create or update may name a form of the entity. The form is checked after the grant and the
 /// record checks and before the content type: a name that is no form of the entity is invalid.
 /// A body is checked in order: content type, then body, then a field that no grant for the action
-/// covers, then, in the write transaction, the defaults of the fields a create leaves out and the computed
-/// fields of the record as it will be stored and of its rows, then the
+/// covers, then, in the write transaction, the defaults of the fields a create leaves out, the
+/// matched references (see <see cref="RecordMatcher"/>) and the computed fields of the record as it will be stored and of its rows, then the
 /// form's <c>requiredWhen</c> conditions and the entity's validations on that record, then storage.
 /// An update of an entity with computed fields or validations, or with a form that has
 /// <c>requiredWhen</c> conditions, reads the stored record first, so an unknown record is not found there.
@@ -295,7 +295,7 @@ public static class RecordCommand
         var sets = model.Validations.Count > 0 || form?.HasRequiredWhen == true
             ? await RecordSets.ReadAsync(connection, application, model, null, input.Links, cancellationToken, cipher)
             : RecordSets.Empty;
-        var prepared = PrepareCreate(application, model, actor, input, form, now, sets);
+        var prepared = await PrepareCreateAsync(connection, application, model, actor, input, form, now, sets, cancellationToken);
         if (prepared.Errors is { } prepareErrors)
         {
             return Invalid(prepareErrors);
@@ -354,35 +354,39 @@ public static class RecordCommand
     }
 
     /// <summary>
-    /// Runs the checks of a create on a parsed input, without storage: the defaults, then the creator
-    /// fields, the computed fields, and the form's <c>requiredWhen</c> conditions and the entity's validations.
+    /// Runs the checks of a create on a parsed input, without writing: the defaults, then the creator
+    /// fields, the matched references (read as the system through <paramref name="connection"/>), the computed fields,
+    /// and the form's <c>requiredWhen</c> conditions and the entity's validations.
     /// <paramref name="now"/> is the start time of the transaction that does the work. <paramref name="sets"/> holds
     /// the target records an aggregate over a <c>references</c> field reads, none when it is null. The result holds the
     /// computed values and rows, or the errors by JSON Pointer.
     /// </summary>
-    public static RecordCreatePrepared PrepareCreate(
+    public static async Task<RecordCreatePrepared> PrepareCreateAsync(
+        NpgsqlConnection connection,
         ApplicationModel application,
         EntityModel model,
         RecordActor actor,
         RecordInput input,
         FormModel? form,
         DateTimeOffset now,
-        RecordSets? sets = null)
+        RecordSets? sets = null,
+        CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(connection);
         ArgumentNullException.ThrowIfNull(application);
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(actor);
         ArgumentNullException.ThrowIfNull(input);
 
-        // The defaults and the creator fields are set before the computed fields and validations, so they
-        // see the record as it will be stored.
+        // The defaults, the creator fields and the matched references are set before the computed fields and
+        // validations, so they see the record as it will be stored.
         var defaults = RecordDefaults.Apply(model, input.Values, now, application.TimeZone);
         if (defaults.Errors is { } defaultErrors)
         {
             return new RecordCreatePrepared(null, defaultErrors);
         }
 
-        var values = RecordCreator.WithCreator(model, defaults.Values, actor.Id);
+        var values = await RecordMatcher.WithMatchesAsync(connection, application, model, RecordCreator.WithCreator(model, defaults.Values, actor.Id), null, cancellationToken);
         var computed = RecordComputer.ComputeCreate(application, model, values, input.Rows);
         if (computed.Errors is { } computeErrors)
         {
@@ -447,7 +451,7 @@ public static class RecordCommand
         // earlier, so a write that passes the version check finds the record as computed here and
         // validated below.
         Record? stored = null;
-        if (model.Validations.Count > 0 || model.HasComputedFields || formModel?.HasRequiredWhen == true)
+        if (model.Validations.Count > 0 || model.HasComputedFields || formModel?.HasRequiredWhen == true || RecordMatcher.HasMatches(model))
         {
             stored = await RecordQueries.GetAsync(connection, application, model, recordId, cipher, cancellationToken);
             if (stored is null)
@@ -456,7 +460,8 @@ public static class RecordCommand
             }
         }
 
-        var computed = RecordComputer.ComputeUpdate(application, model, stored, input.Values, input.Rows);
+        var values = await RecordMatcher.WithMatchesAsync(connection, application, model, input.Values, stored, cancellationToken);
+        var computed = RecordComputer.ComputeUpdate(application, model, stored, values, input.Rows);
         if (computed.Errors is { } computeErrors)
         {
             return Invalid(computeErrors);
@@ -639,7 +644,7 @@ public static class RecordCommand
         }
 
         Record? stored = null;
-        if (model.Validations.Count > 0 || model.HasComputedFields)
+        if (model.Validations.Count > 0 || model.HasComputedFields || RecordMatcher.HasMatches(model))
         {
             stored = await RecordQueries.GetAsync(connection, application, model, recordId, cipher, cancellationToken);
             if (stored is null)
@@ -648,7 +653,8 @@ public static class RecordCommand
             }
         }
 
-        var computed = RecordComputer.ComputeUpdate(application, model, stored, input.Values, input.Rows);
+        var values = await RecordMatcher.WithMatchesAsync(connection, application, model, input.Values, stored, cancellationToken);
+        var computed = RecordComputer.ComputeUpdate(application, model, stored, values, input.Rows);
         if (computed.Errors is { } computeErrors)
         {
             return new UpdatePrepared(null, null, null, Invalid(computeErrors));

@@ -300,7 +300,8 @@ public static class RecordCommands
             return new RecordWriteResult(RecordWriteOutcome.Invalid, Errors: errors);
         }
 
-        var computed = RecordComputer.ComputeUpdate(application, entity, stored, converted, []);
+        var matched = await RecordMatcher.WithMatchesAsync(connection, application, entity, converted, stored, cancellationToken);
+        var computed = RecordComputer.ComputeUpdate(application, entity, stored, matched, []);
         if (computed.Errors is { } computeErrors)
         {
             return new RecordWriteResult(RecordWriteOutcome.Invalid, Errors: computeErrors);
@@ -398,7 +399,8 @@ public static class RecordCommands
             return new RecordWriteResult(RecordWriteOutcome.Invalid, Errors: errors);
         }
 
-        var computed = RecordComputer.ComputeCreate(application, entity, RecordCreator.WithCreator(entity, defaults.Values, creatorId), []);
+        var matched = await RecordMatcher.WithMatchesAsync(connection, application, entity, RecordCreator.WithCreator(entity, defaults.Values, creatorId), null, cancellationToken);
+        var computed = RecordComputer.ComputeCreate(application, entity, matched, []);
         if (computed.Errors is { } computeErrors)
         {
             return new RecordWriteResult(RecordWriteOutcome.Invalid, Errors: computeErrors);

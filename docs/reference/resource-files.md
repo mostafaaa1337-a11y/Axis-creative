@@ -598,7 +598,7 @@ new check is a new compile diagnostic.
 
 A `reference` field may have `match`, which finds its record by a unique field instead of being
 written, as [D124](../decisions/d124-the-organization-and-approvals-modules.md) agrees. The compile
-checks of `match` are built and compile into the field's model. The write below is
+checks of `match` and the write of its value are built. The refusal of a written value is
 _(planned for M26)_:
 
 ```json
@@ -616,12 +616,15 @@ _(planned for M26)_:
   `reference` fields the same target entity. It may not be `sensitive`, the field itself, another
   field with `match`, or a computed field, because the match runs before computed fields and a
   chain of matched fields has no order. A problem is `AXC0362` at `/fields/{i}/match`.
-- **Value.** On every create and update, after defaults and creator fields and before computed
+- **Value.** _(built)_ On every create and update, after defaults and creator fields and before computed
   fields and validations, the write sets the field to the target record whose `field` equals the
-  value of `from`, or to `null` when `from` is empty or no record matches. The lookup reads as the
-  system, so it needs no grant. A later change to the target does not change the stored reference
+  value of `from`, or to `null` when `from` is empty or no record matches. On an update, `from` is the
+  value in the body, or else the stored value. The lookup reads as the system, so it needs no grant and
+  no record filter hides the target. Every write path runs it: the record API, the import check,
+  process steps and transition effects, task completion, inbound endpoints and seeds. A value sent for
+  the field is replaced by the matched value. A later change to the target does not change the stored reference
   until this record is written again.
-- **Not writable.** Clients, process `set`, imports and seeds cannot write it. A value for it is a
+- **Not writable.** _(planned for M26)_ Clients, process `set`, imports and seeds cannot write it. A value for it is a
   `400` at its pointer with "Cannot be set.", as for a creator field.
 - **Allowed fields.** Only a `reference` field may have `match`. It cannot be combined with
   `required`, `expression`, `default` or `sequence`, and a child entity's field cannot have it.
