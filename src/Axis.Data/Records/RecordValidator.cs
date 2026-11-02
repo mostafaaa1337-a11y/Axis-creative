@@ -158,8 +158,9 @@ public static class RecordValidator
         // A stored value that cannot be held exactly leaves previous() without a record to read, so every validation fails.
         var storedExact = before.Values.All(pair => pair.Exact);
         // The record's own id comes last, so it wins over a field named id, as in the checker's scope.
-        var current = new ExpressionValues(
-            record.Select(pair => KeyValuePair.Create(pair.Key, pair.Value.Value)).Append(KeyValuePair.Create("id", (object?)recordId)));
+        var currentValues = record.ToDictionary(pair => pair.Key, pair => pair.Value.Value, StringComparer.OrdinalIgnoreCase);
+        currentValues["id"] = recordId;
+        var current = new ExpressionValues(currentValues);
         var previous = new ExpressionValues(before.Select(pair => KeyValuePair.Create(pair.Key, pair.Value.Value)));
         string? firstPoint = null;
         foreach (var validation in contract.Validations)
