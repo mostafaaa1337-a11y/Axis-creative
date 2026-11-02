@@ -281,7 +281,7 @@ see the Data sources bullet of the Resolve step in
   `/aggregate/measures/{i}/filter`. For example `AXC0053` is a call to `lower`.
 - `currentUser()` is allowed in the `filter` and not in a measure `filter`,
   where it is `AXC0095` at `/aggregate/measures/{i}/filter`. A schedule trigger
-  over a data source whose `filter` calls it is `AXC0362`, see
+  over a data source whose `filter` calls it is `AXC0363`, see
   [integration resources](integration-resources.md).
 - No `filter` is checked while a parameter of the data source has a
   diagnostic, because that parameter may have no usable type.

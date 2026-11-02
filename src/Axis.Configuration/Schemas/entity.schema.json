@@ -116,7 +116,16 @@
         "searchable": { "type": "boolean" },
         "default": { "type": "string", "minLength": 1, "x-axis-expression": true },
         "sensitive": { "type": "boolean" },
-        "exactLookup": { "type": "boolean" }
+        "exactLookup": { "type": "boolean" },
+        "match": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["field", "from"],
+          "properties": {
+            "field": { "type": "string", "minLength": 1 },
+            "from": { "type": "string", "minLength": 1 }
+          }
+        }
       }
     }
   }

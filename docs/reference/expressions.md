@@ -490,7 +490,7 @@ such as `requester == currentUser()` or `department.manager == currentUser()`.
   [policy filter](roles-and-policies.md), including as an argument of a rule
   call there, and in a [data source](data-sources.md#resource-shape) `filter`.
   Anywhere else, including a measure `filter` and a rule body, it is `AXC0095`.
-  A schedule trigger over a data source that calls it is `AXC0362`.
+  A schedule trigger over a data source that calls it is `AXC0363`.
 - **SQL.** It becomes the named parameter `@currentUser`, which the caller
   binds as `text`. The id is never spliced into the SQL text.
 - **One value.** Every call in one request gives the same id, so the
