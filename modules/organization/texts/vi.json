@@ -1,0 +1,30 @@
+{
+  "id": "2e7e77ae-5582-4a57-a69b-19dd99f7a919",
+  "kind": "text",
+  "name": "TextsVi",
+  "formatVersion": 1,
+  "locale": "vi",
+  "texts": {
+    "organization.department.label": "Phòng ban",
+    "organization.department.code": "Mã",
+    "organization.department.name": "Tên",
+    "organization.department.parent": "Phòng ban cấp trên",
+    "organization.department.head": "Trưởng phòng",
+    "organization.department.active": "Đang hoạt động",
+    "organization.department.codeUpperCase": "Dùng chữ in hoa cho mã.",
+    "organization.employee.label": "Nhân viên",
+    "organization.employee.fullName": "Họ và tên",
+    "organization.employee.workEmail": "Email công việc",
+    "organization.employee.phone": "Số điện thoại",
+    "organization.employee.jobTitle": "Chức danh",
+    "organization.employee.department": "Phòng ban",
+    "organization.employee.manager": "Quản lý trực tiếp",
+    "organization.employee.user": "Tài khoản",
+    "organization.employee.active": "Đang làm việc",
+    "organization.employee.delegate": "Người được ủy quyền",
+    "organization.employee.delegateFrom": "Vắng từ ngày",
+    "organization.employee.delegateUntil": "Vắng đến ngày",
+    "organization.roles.admin": "Quản trị viên tổ chức",
+    "organization.roles.member": "Thành viên tổ chức"
+  }
+}
