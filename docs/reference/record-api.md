@@ -280,6 +280,9 @@ HTTP also call. The record API maps its outcome to the responses below.
   `401`, so the record API never leaves it `null`. A body that sets it on create or update, even to `null`, is a
   `400` at its pointer with the message "Cannot be set.", as for a sequence
   field.
+- **Matched reference fields.** A `reference` field with
+  [`match`](resource-files.md#matched-references) is set by the server, so a body that sets it on
+  create or update, even to `null`, is a `400` at its pointer with the message "Cannot be set.".
 
 - **Form conditions.** `POST` and `PATCH` take an optional query
   `?form=<name>`. The name must be a `form` resource over the entity. A name

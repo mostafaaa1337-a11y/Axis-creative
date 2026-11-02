@@ -2201,6 +2201,7 @@ internal static class ProcessChecker
     internal static string? ReadOnlyReason(FieldDefinition field) =>
         field.Expression is not null ? "is computed"
         : field.Sequence is not null ? "is numbered by a sequence"
+        : field.Match is not null ? "is set by its match"
         : FieldTypes.Parse(field.Type) == FieldType.ChildCollection ? "is a child collection"
         : FieldTypes.Parse(field.Type) == FieldType.References ? "is a references field"
         : null;
