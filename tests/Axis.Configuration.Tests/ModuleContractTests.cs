@@ -505,6 +505,21 @@ public sealed class ModuleContractTests
         }
     }
 
+    [Fact]
+    public void A_core_validation_may_read_id_the_record_own_id()
+    {
+        using var modules = Modules(Contract(
+            null,
+            extra: Validations(Validation("hasId", "id != null", field: "title"))));
+        using var folder = Application();
+
+        var compiled = ApplicationCompiler.Compile(folder.Path, null, ModuleCatalog.Load(modules.Path).Modules);
+        var rebuilt = ApplicationCompiler.Compile(compiled.Resources);
+
+        Assert.Empty(compiled.Diagnostics);
+        Assert.Empty(rebuilt.Diagnostics);
+    }
+
     private const string ScenarioFile = "modules/approvals/scenarios/Covers.json";
 
     private const string CoveredPointsExtra = """

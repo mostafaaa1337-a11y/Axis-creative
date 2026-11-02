@@ -2903,6 +2903,14 @@ public static partial class ApplicationCompiler
                 ]);
         }
 
+        // A core validation also reads id, the record's own id, which a lifecycle guard does not.
+        var validationScope = ExpressionScopes.ForEntity(
+            entity.Fields,
+            rules: rules,
+            findEntity: entitiesByName.GetValueOrDefault,
+            modules: modules,
+            undeclaredModuleIsUnknown: true,
+            idEntity: entity.Name);
         return new()
         {
             Name = contract.Name,
@@ -2924,7 +2932,7 @@ public static partial class ApplicationCompiler
                 },
             Validations = [.. (contract.Validations ?? []).Select(validation => new CoreValidationModel(
                 validation.Name,
-                ExpressionModel.Compile(validation.Expression, scope, ExpressionType.Boolean, contract: true),
+                ExpressionModel.Compile(validation.Expression, validationScope, ExpressionType.Boolean, contract: true),
                 validation.Message,
                 FindField(entity, validation.Field)!.Name))],
             Effects = [.. (contract.Effects ?? []).Select(BuildEffect)],

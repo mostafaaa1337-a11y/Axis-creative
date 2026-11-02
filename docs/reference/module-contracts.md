@@ -130,7 +130,9 @@ module's `Decision` entity:
   [expression language](expressions.md). They read the record's own fields and its child rows
   through aggregates, as an entity validation does, and call the rules of the contract's own
   module. They may also call [`previous`](#previous-values),
-  [`accountableUser`](#the-accountable-user) and [`decisionTask`](#the-deciding-task). A ceiling filter is a policy filter, see
+  [`accountableUser`](#the-accountable-user) and [`decisionTask`](#the-deciding-task). A core
+  validation also reads `id`, the record's own id, which on a create is the id the new record gets.
+  A guard does not read `id`. A ceiling filter is a policy filter, see
   [grant ceiling](#grant-ceiling).
 
 ## Lifecycle
@@ -168,7 +170,9 @@ The lifecycle is a state machine on one field of the entity.
 `validations` holds the module's core validations. Each has a `name`, an `expression`, a `message`
 and a `field`, with the meaning of an [entity validation](resource-files.md#entity-logic), plus
 the [`previous`](#previous-values), [`accountableUser`](#the-accountable-user) and
-[`decisionTask`](#the-deciding-task) functions.
+[`decisionTask`](#the-deciding-task) functions. A core validation reads `id`, the record's own id,
+and on a create that is the id the new record gets, so `parent == null or parent != id` keeps a
+record from referring to itself. A field named `id` is hidden by it.
 
 - The compile checks each one: its `name` is unique ignoring letter case (`AXC0328`), its `field` is
   a field of the entity (`AXC0052`), its message key starts with `<module id>.` (`AXC0209`), and its

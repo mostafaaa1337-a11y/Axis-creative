@@ -10,7 +10,8 @@ namespace Axis.Integration.Tests;
 /// <summary>
 /// The <c>contracts</c> step of a publish and a validate request: the contract scenarios of the pinned module run in their own
 /// databases before the compile. The <c>requests</c> test module is copied to a temporary folder with one contract scenario that
-/// covers its <c>submit</c> transition, because the shared fixture is used by other tests.
+/// covers its <c>submit</c> transition, because the shared fixture is used by other tests. The built-in <c>organization</c> module,
+/// which the test project copies to <c>BuiltInModules</c>, runs its own five contract scenarios.
 /// </summary>
 [Collection("Test scenario runs")]
 public sealed class PublisherContractScenarioTests(PostgreSqlFixture database) : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
@@ -18,6 +19,7 @@ public sealed class PublisherContractScenarioTests(PostgreSqlFixture database) :
     private const string ScenarioFile = "modules/requests/scenarios/submit-request.json";
 
     private static readonly string _app = Path.Combine(AppContext.BaseDirectory, "Fixtures", "ModuleContractApp");
+    private static readonly string _organizationApp = Path.Combine(AppContext.BaseDirectory, "Fixtures", "OrganizationApp");
     private static readonly string _modules = Path.Combine(AppContext.BaseDirectory, "Fixtures", "Modules");
 
     private static readonly TimeSpan _limit = TimeSpan.FromSeconds(180);
@@ -54,7 +56,7 @@ public sealed class PublisherContractScenarioTests(PostgreSqlFixture database) :
         using var modules = ModulesWithScenario("approved");
         await using var scenario = await AdminScenario.NewAsync(database, migrate: true, CancellationToken);
         var tenant = await CreateTenantAsync(scenario);
-        var request = await QueueAsync(scenario, tenant, "publish");
+        var request = await QueueAsync(scenario, tenant, "publish", _app);
 
         var result = await RunPublisherAsync(scenario, tenant, request, modules.Path, withScenarioServer: true);
 
@@ -83,7 +85,7 @@ public sealed class PublisherContractScenarioTests(PostgreSqlFixture database) :
         using var modules = ModulesWithScenario("submitted");
         await using var scenario = await AdminScenario.NewAsync(database, migrate: true, CancellationToken);
         var tenant = await CreateTenantAsync(scenario);
-        var request = await QueueAsync(scenario, tenant, "publish");
+        var request = await QueueAsync(scenario, tenant, "publish", _app);
 
         var result = await RunPublisherAsync(scenario, tenant, request, modules.Path, withScenarioServer: true);
 
@@ -105,7 +107,7 @@ public sealed class PublisherContractScenarioTests(PostgreSqlFixture database) :
         using var modules = ModulesWithScenario("approved");
         await using var scenario = await AdminScenario.NewAsync(database, migrate: true, CancellationToken);
         var tenant = await CreateTenantAsync(scenario);
-        var request = await QueueAsync(scenario, tenant, "validate");
+        var request = await QueueAsync(scenario, tenant, "validate", _app);
 
         var result = await RunPublisherAsync(scenario, tenant, request, modules.Path, withScenarioServer: true);
 
@@ -123,7 +125,7 @@ public sealed class PublisherContractScenarioTests(PostgreSqlFixture database) :
         using var modules = ModulesWithScenario("submitted");
         await using var scenario = await AdminScenario.NewAsync(database, migrate: true, CancellationToken);
         var tenant = await CreateTenantAsync(scenario);
-        var request = await QueueAsync(scenario, tenant, "publish");
+        var request = await QueueAsync(scenario, tenant, "publish", _app);
 
         var result = await RunPublisherAsync(scenario, tenant, request, modules.Path, withScenarioServer: false);
 
@@ -159,7 +161,7 @@ public sealed class PublisherContractScenarioTests(PostgreSqlFixture database) :
         await using var scenario = await AdminScenario.NewAsync(database, migrate: true, CancellationToken);
         var tenant = await CreateTenantAsync(scenario);
         var relax = new JsonArray(new JsonObject { ["point"] = "Request/transitions/submit", ["reason"] = "Tests skip it." });
-        var request = await QueueAsync(scenario, tenant, "publish", relax);
+        var request = await QueueAsync(scenario, tenant, "publish", _app, relax);
 
         var result = await RunPublisherAsync(scenario, tenant, request, modules.Path, withScenarioServer: true);
 
@@ -184,7 +186,7 @@ public sealed class PublisherContractScenarioTests(PostgreSqlFixture database) :
         await using var scenario = await AdminScenario.NewAsync(database, migrate: true, CancellationToken);
         var tenant = await CreateTenantAsync(scenario);
         var relax = new JsonArray(new JsonObject { ["point"] = "Request/transitions/submit", ["reason"] = "Tests skip it." });
-        var request = await QueueAsync(scenario, tenant, "publish", relax);
+        var request = await QueueAsync(scenario, tenant, "publish", _app, relax);
 
         var result = await RunPublisherAsync(scenario, tenant, request, modules.Path, withScenarioServer: false);
 
@@ -192,6 +194,33 @@ public sealed class PublisherContractScenarioTests(PostgreSqlFixture database) :
         Assert.True(status is "succeeded", string.Join('\n', result.Output));
         var item = Assert.Single(await ResultsAsync(scenario, tenant, request))!;
         Assert.Equal("skipped", item["outcome"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task A_publish_of_an_application_that_declares_organization_runs_its_five_contract_scenarios_and_they_pass()
+    {
+        var modules = System.IO.Path.Combine(AppContext.BaseDirectory, "BuiltInModules");
+        await using var scenario = await AdminScenario.NewAsync(database, migrate: true, CancellationToken);
+        var tenant = await CreateTenantAsync(scenario);
+        var request = await QueueAsync(scenario, tenant, "publish", _organizationApp);
+
+        var result = await RunPublisherAsync(scenario, tenant, request, modules, withScenarioServer: true);
+
+        var status = await ScalarAsync(scenario, tenant, $"SELECT status FROM axis.publish_requests WHERE id = '{request}'");
+        Assert.True(status is "succeeded", string.Join('\n', result.Output));
+        var items = await ResultsAsync(scenario, tenant, request);
+        Assert.Equal(
+            [
+                "organization/AdminManagesOrganization",
+                "organization/DelegateNeedsDatesInOrder",
+                "organization/DepartmentIsNotItsOwnParent",
+                "organization/EmployeeIsNotTheirOwnManagerOrDelegate",
+                "organization/MemberUpdatesOnlyTheirOwnAbsence",
+            ],
+            items.Select(item => item!["name"]!.GetValue<string>()).Order(StringComparer.Ordinal).ToArray());
+        Assert.All(items, item => Assert.Equal("passed", item!["outcome"]!.GetValue<string>()));
+        Assert.Equal(["version ok", "contracts ok", "compile ok"], StepLines(result, tenant).Take(3).ToArray());
+        Assert.Equal(0L, await ScenarioDatabasesAsync());
     }
 
     // A copy of the test modules whose requests module has a contract scenario. It submits a draft request, and then expects the
@@ -275,15 +304,15 @@ public sealed class PublisherContractScenarioTests(PostgreSqlFixture database) :
         return await run;
     }
 
-    // Stores a request over the runtime role, as the server will. The snapshot is every JSON file of the ModuleContractApp fixture.
+    // Stores a request over the runtime role, as the server will. The snapshot is every JSON file of the application folder.
     // With relax, the manifest in the snapshot gets those relax entries on its first module.
-    private static async Task<Guid> QueueAsync(AdminScenario scenario, string tenant, string kind, JsonArray? relax = null)
+    private static async Task<Guid> QueueAsync(AdminScenario scenario, string tenant, string kind, string app, JsonArray? relax = null)
     {
         var items = new JsonArray();
-        foreach (var path in Directory.EnumerateFiles(_app, "*.json", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
+        foreach (var path in Directory.EnumerateFiles(app, "*.json", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
         {
             var bytes = await File.ReadAllBytesAsync(path, CancellationToken);
-            var file = System.IO.Path.GetRelativePath(_app, path).Replace('\\', '/');
+            var file = System.IO.Path.GetRelativePath(app, path).Replace('\\', '/');
             if (relax is not null && file == "application.json")
             {
                 var manifestNode = JsonNode.Parse(Encoding.UTF8.GetString(bytes))!;
@@ -299,7 +328,7 @@ public sealed class PublisherContractScenarioTests(PostgreSqlFixture database) :
             });
         }
 
-        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(System.IO.Path.Combine(_app, "application.json"), CancellationToken));
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(System.IO.Path.Combine(app, "application.json"), CancellationToken));
         var row = await scenario.RowAsync(tenant);
         var password = AdminScenario.Cipher.Decrypt(tenant, TenantSecretFields.RuntimePassword, row.RuntimePassword).Reveal();
         await using var connection = new NpgsqlConnection(scenario.TenantConnectionString(tenant, row.RuntimeUser, password));

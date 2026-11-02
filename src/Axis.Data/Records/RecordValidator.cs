@@ -108,7 +108,8 @@ public static class RecordValidator
     /// <summary>
     /// Runs the core validations of the entity's module contract on the record as it will be stored: the
     /// <paramref name="stored"/> record, or none on a create, with <paramref name="values"/> and
-    /// <paramref name="rows"/> on top. <c>previous(field)</c> reads the stored record as it was before the
+    /// <paramref name="rows"/> on top. <c>id</c> is <paramref name="recordId"/>, the record's own id, which on a
+    /// create is the id the record will get. <c>previous(field)</c> reads the stored record as it was before the
     /// write, and is <c>null</c> for every field on a create. <c>accountableUser()</c> and
     /// <c>decisionTask()</c> read <paramref name="accountability"/>. A validation fails when its expression is
     /// <c>false</c>, <c>null</c> or stops with a run-time error. A failure is keyed <c>/values/&lt;field&gt;</c>
@@ -120,6 +121,7 @@ public static class RecordValidator
         ApplicationModel application,
         EntityModel entity,
         Record? stored,
+        Guid recordId,
         IReadOnlyList<RecordValue> values,
         IReadOnlyList<RecordRows> rows,
         DateTimeOffset now,
@@ -155,7 +157,9 @@ public static class RecordValidator
 
         // A stored value that cannot be held exactly leaves previous() without a record to read, so every validation fails.
         var storedExact = before.Values.All(pair => pair.Exact);
-        var current = new ExpressionValues(record.Select(pair => KeyValuePair.Create(pair.Key, pair.Value.Value)));
+        // The record's own id comes last, so it wins over a field named id, as in the checker's scope.
+        var current = new ExpressionValues(
+            record.Select(pair => KeyValuePair.Create(pair.Key, pair.Value.Value)).Append(KeyValuePair.Create("id", (object?)recordId)));
         var previous = new ExpressionValues(before.Select(pair => KeyValuePair.Create(pair.Key, pair.Value.Value)));
         string? firstPoint = null;
         foreach (var validation in contract.Validations)
